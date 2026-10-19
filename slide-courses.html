@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Courses &amp; tâches</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192;
+    --faint2:#bdb6a6; --line:#e8e3d7; --accent:#f2b600; --done:#bdb6a6; --ring:#d8d2c4;
+  }
+  :root[data-theme="dark"] {
+    --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a;
+    --faint2:#6f685c; --line:#332f27; --accent:#f2b600; --done:#6f685c; --ring:#443f35;
+  }
+  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
+  body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+  #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; background: var(--panel);
+           -webkit-transform-origin: 0 0; transform-origin: 0 0; }
+
+  #head { padding: 40px 56px 6px; }
+  #title { font-size: 56px; font-weight: 600; margin: 0; line-height: 1; }
+  #sub { font-size: 20px; color: var(--muted); margin-top: 10px; }
+
+  #body { display: -webkit-flex; display: flex; margin: 24px 56px 0; }
+  .col { -webkit-flex: 1; flex: 1; }
+  .col.right { border-left: 1px solid var(--line); padding-left: 44px; margin-left: 44px; }
+  .colLbl { font-size: 22px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+  .colLbl b { color: var(--accent); font-weight: 600; }
+
+  .item { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 11px 0; }
+  .box { width: 26px; height: 26px; border-radius: 7px; border: 2px solid var(--ring); -webkit-flex: none; flex: none; margin-right: 18px; box-sizing: border-box; }
+  .item.done .box { border-color: var(--accent); background: var(--accent); position: relative; }
+  .item.done .box:after { content: ""; position: absolute; left: 7px; top: 2px; width: 6px; height: 12px;
+    border: solid #2e2b26; border-width: 0 3px 3px 0; -webkit-transform: rotate(45deg); transform: rotate(45deg); }
+  .txt { font-size: 30px; }
+  .item.done .txt { color: var(--done); text-decoration: line-through; }
+  .empty { font-size: 26px; color: var(--muted); margin-top: 8px; }
+
+  #foot { position: absolute; left: 56px; right: 56px; bottom: 14px; font-size: 13px; color: var(--faint2); }
+  #foot span { float: right; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <h1 id="title">Courses &amp; tâches</h1>
+    <div id="sub">Modifiable depuis l'appli Google Sheets sur vos téléphones — le cadre se met à jour tout seul.</div>
+  </div>
+
+  <div id="body">
+    <div class="col"><div class="colLbl">Courses <b id="cCount"></b></div><div id="courses"></div></div>
+    <div class="col right"><div class="colLbl">Tâches <b id="tCount"></b></div><div id="taches"></div></div>
+  </div>
+
+  <div id="foot">Liste partagée Google Sheets.<span id="src"></span></div>
+</div>
+
+<script>
+/* CSV_URL = lien "Publier sur le web" du Google Sheet en CSV. Vide = exemple.
+   Colonnes attendues : Liste , Article , Fait   (Liste = Courses|Tâches ; Fait = x si coché) */
+var CSV_URL = "";
+var REFRESH_MIN = 2;
+var LAT = 48.8938, LON = 2.2870;
+
+function el(id) { return document.getElementById(id); }
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+
+/* ---------- thème (clair par défaut, ?theme=dark pour tester) ---------- */
+function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
+function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
+
+/* ---------- CSV ---------- */
+function parseCSV(text) {
+  var rows = [], row = [], cur = "", q = false, i, c;
+  for (i = 0; i < text.length; i++) {
+    c = text.charAt(i);
+    if (q) {
+      if (c === '"') { if (text.charAt(i + 1) === '"') { cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else {
+      if (c === '"') q = true;
+      else if (c === ',') { row.push(cur); cur = ""; }
+      else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ""; }
+      else if (c === '\r') { /* ignore */ }
+      else cur += c;
+    }
+  }
+  if (cur.length || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+
+function norm(s) { return (s || "").toLowerCase().replace(/[àâä]/g, "a").replace(/[éèêë]/g, "e").replace(/\s+/g, ""); }
+
+/* ---------- données ---------- */
+var DATA = null, lastLoad = null;
+
+function mock() {
+  return {
+    courses: [ { t: "Lait", done: false }, { t: "Pain", done: false }, { t: "Œufs", done: true },
+               { t: "Café", done: false }, { t: "Tomates", done: false }, { t: "Pâtes", done: true } ],
+    taches:  [ { t: "Lessive", done: false }, { t: "Sortir le verre", done: true },
+               { t: "Appeler le proprio", done: false }, { t: "Arroser les plantes", done: false } ]
+  };
+}
+
+function renderList(id, items, countId) {
+  var remaining = 0, h = "";
+  if (!items || !items.length) { el(id).innerHTML = '<div class="empty">Rien pour l\'instant.</div>'; el(countId).innerHTML = ""; return; }
+  for (var i = 0; i < items.length; i++) {
+    if (!items[i].done) remaining++;
+    h += '<div class="item' + (items[i].done ? " done" : "") + '"><div class="box"></div><div class="txt">' + items[i].t + '</div></div>';
+  }
+  el(id).innerHTML = h;
+  el(countId).innerHTML = remaining ? "· " + remaining + " à faire" : "· tout est fait";
+}
+
+function render() {
+  applyTheme();
+  var d = DATA || mock();
+  renderList("courses", d.courses, "cCount");
+  renderList("taches", d.taches, "tCount");
+  el("src").innerHTML = lastLoad ? "Maj " + hhmm(lastLoad) : "Exemple";
+}
+
+function load() {
+  if (!CSV_URL) { DATA = null; render(); return; }
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", CSV_URL);
+  xhr.timeout = 12000;
+  xhr.onload = function () {
+    if (xhr.status === 200) {
+      try {
+        var rows = parseCSV(xhr.responseText), out = { courses: [], taches: [] };
+        for (var i = 1; i < rows.length; i++) {
+          var liste = norm(rows[i][0]), article = (rows[i][1] || "").trim(), fait = norm(rows[i][2]);
+          if (!article) continue;
+          var done = (fait === "x" || fait === "oui" || fait === "true" || fait === "1" || fait === "fait");
+          if (liste.indexOf("tach") === 0 || liste.indexOf("tâch") === 0) out.taches.push({ t: article, done: done });
+          else out.courses.push({ t: article, done: done });
+        }
+        DATA = out; lastLoad = new Date(); render();
+      } catch (e) {}
+    }
+  };
+  xhr.send();
+}
+
+function fit() {
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800), st = el("stage").style;
+  st.webkitTransform = st.transform = "scale(" + s + ")";
+  st.left = ((window.innerWidth - 1280 * s) / 2) + "px";
+  st.top = ((window.innerHeight - 800 * s) / 2) + "px";
+}
+window.onresize = fit; fit(); applyTheme();
+
+render();
+load();
+setInterval(load, REFRESH_MIN * 60000);
+</script>
+</body>
+</html>

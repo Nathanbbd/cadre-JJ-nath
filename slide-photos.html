@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photos</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #14120e; overflow: hidden; }
+  body { font-family: "Barlow", "Roboto", Arial, sans-serif; }
+  #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; background: #14120e;
+           -webkit-transform-origin: 0 0; transform-origin: 0 0; overflow: hidden; }
+  .ph { position: absolute; left: 0; top: 0; width: 1280px; height: 800px;
+        background-position: center; background-repeat: no-repeat; background-size: cover;
+        opacity: 0; -webkit-transition: opacity 1.2s ease; transition: opacity 1.2s ease; }
+  .ph.on { opacity: 1; }
+  /* léger vignettage bas pour lisibilité de l'heure */
+  #grad { position: absolute; left: 0; right: 0; bottom: 0; height: 240px; z-index: 5;
+          background: -webkit-linear-gradient(top, rgba(0,0,0,0), rgba(0,0,0,0.55));
+          background: linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.55)); }
+  #clock { position: absolute; left: 44px; bottom: 34px; z-index: 6; color: #fff;
+           font-size: 56px; font-weight: 600; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+  #cap { position: absolute; left: 46px; bottom: 20px; z-index: 6; color: rgba(255,255,255,0.85);
+         font-size: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); display: none; }
+
+  /* écran d'aide si aucune photo */
+  #help { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; z-index: 7;
+          display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column;
+          -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+          color: #f4f1ea; background: #1b1a16; text-align: center; padding: 0 120px; }
+  #help h1 { font-size: 48px; font-weight: 600; margin: 0 0 18px; }
+  #help p { font-size: 24px; color: #b3ab99; line-height: 1.5; margin: 0; }
+  #help b { color: #f2b600; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="ph" id="p0"></div>
+  <div class="ph" id="p1"></div>
+  <div id="grad"></div>
+  <div id="clock"></div>
+  <div id="cap"></div>
+  <div id="help">
+    <h1>Vos photos ici</h1>
+    <p>Déposez vos images dans le dossier <b>photos/</b> du dépôt GitHub,<br>puis listez leurs noms dans <b>photos.json</b>.<br>Elles défileront ici automatiquement.</p>
+  </div>
+</div>
+
+<script>
+/* photos.json = tableau de noms de fichiers (dans le dossier photos/) ou d'URL complètes.
+   Ex : ["nous-plage.jpg", "anniv.jpg", "https://.../photo.jpg"] */
+var MANIFEST = "photos.json";
+var HOLD_MS = 8000;   /* durée d'affichage par photo */
+
+function el(id) { return document.getElementById(id); }
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+var LIST = [], idx = -1, layer = 0;
+
+function srcOf(name) { return (/^https?:\/\//.test(name)) ? name : ("photos/" + name); }
+
+function nextPhoto() {
+  if (!LIST.length) return;
+  idx = (idx + 1) % LIST.length;
+  var showId = layer ? "p1" : "p0", hideId = layer ? "p0" : "p1";
+  el(showId).style.backgroundImage = 'url("' + srcOf(LIST[idx]) + '")';
+  el(showId).className = "ph on"; el(hideId).className = "ph";
+  layer = layer ? 0 : 1;
+}
+
+function clock() {
+  var d = new Date();
+  el("clock").innerHTML = pad(d.getHours()) + ":" + pad(d.getMinutes());
+  setTimeout(clock, 60000 - (Date.now() % 60000) + 50);
+}
+
+function start(list) {
+  LIST = list || [];
+  if (!LIST.length) { el("help").style.display = "flex"; return; }
+  el("help").style.display = "none";
+  nextPhoto();
+  setInterval(nextPhoto, HOLD_MS);
+}
+
+function load() {
+  var xhr = new XMLHttpRequest(); xhr.open("GET", MANIFEST + "?t=" + Date.now()); xhr.timeout = 10000;
+  xhr.onload = function () {
+    var list = [];
+    if (xhr.status === 200) { try { var j = JSON.parse(xhr.responseText); if (j instanceof Array) list = j; else if (j && j.photos) list = j.photos; } catch (e) {} }
+    start(list);
+  };
+  xhr.onerror = function () { start([]); };
+  xhr.ontimeout = function () { start([]); };
+  xhr.send();
+}
+
+function fit() {
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800), st = el("stage").style;
+  st.webkitTransform = st.transform = "scale(" + s + ")";
+  st.left = ((window.innerWidth - 1280 * s) / 2) + "px";
+  st.top = ((window.innerHeight - 800 * s) / 2) + "px";
+}
+window.onresize = fit; fit();
+
+clock();
+load();
+</script>
+</body>
+</html>
