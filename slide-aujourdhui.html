@@ -48,12 +48,19 @@
   .hr.now { background: var(--yellowsoft); }
   .hr.now .hl { color: var(--soon); font-weight: 700; }
 
+  #rainAlert { display: none; margin-top: 14px; background: var(--yellowsoft); border-radius: 14px;
+               padding: 12px 18px; font-size: 22px; font-weight: 500; color: var(--ink);
+               -webkit-align-items: center; align-items: center; }
+  #rainAlert.show { display: -webkit-flex; display: flex; }
+  #rainAlert svg { width: 28px; height: 28px; -webkit-flex: none; flex: none; margin-right: 14px; }
+  #rainAlert svg path { fill: none; stroke: var(--soon); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
   /* bas : lumières à gauche, agenda à droite */
-  #lower { display: -webkit-flex; display: flex; margin: 20px 60px 0; }
+  #lower { display: -webkit-flex; display: flex; margin: 14px 60px 0; }
   #left { width: 470px; padding-right: 40px; }
   #agenda { -webkit-flex: 1; flex: 1; border-left: 1px solid var(--line); padding-left: 40px; }
   .secLbl { font-size: 18px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-  .ev { display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .ev { display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--line); }
   .evTime { width: 104px; font-size: 23px; font-weight: 600; color: var(--accent); -webkit-flex: none; flex: none; }
   .evTitle { font-size: 23px; }
   .evLoc { font-size: 16px; color: var(--muted); margin-top: 2px; }
@@ -107,6 +114,7 @@
       <div id="wcRight"><div id="wcCond"></div><div id="wcHL"></div></div>
     </div>
     <div id="wcHours"></div>
+    <div id="rainAlert"></div>
   </div>
 
   <div id="lower">
@@ -251,6 +259,12 @@ function renderWeather() {
   el("wcTemp").innerHTML = Math.round(WX.temp) + "<span>°</span>";
   el("wcCond").innerHTML = condText(WX.code);
   el("wcHL").innerHTML = "&#8593; <b>" + Math.round(WX.tmax) + "°</b>&nbsp;&nbsp;&#8595; <b>" + Math.round(WX.tmin) + "°</b>";
+  var ra = el("rainAlert"), umb = '<svg viewBox="0 0 24 24"><path d="M12 4V2.4"/><path d="M4 11a8 8 0 0 1 16 0z"/><path d="M12 11v7a2.2 2.2 0 0 0 4.3 0.6"/></svg>';
+  if (WX.rain) {
+    ra.className = "show";
+    if (WX.rain.now) ra.innerHTML = umb + "Il pleut en ce moment — pense au parapluie";
+    else ra.innerHTML = umb + "Pluie attendue vers " + WX.rain.hour + " h — prends un parapluie" + (WX.rain.prob != null ? " (" + WX.rain.prob + "%)" : "");
+  } else { ra.className = ""; ra.innerHTML = ""; }
   var h = "", cols = WX.cols || [];
   for (var i = 0; i < cols.length; i++) {
     var col = cols[i], ic;
@@ -286,8 +300,8 @@ function render() {
 
   var ag = AG || { events: [] };
   if (ag.events && ag.events.length) {
-    var hh = "";
-    for (var i = 0; i < ag.events.length; i++) {
+    var hh = "", nmax = Math.min(ag.events.length, 4);
+    for (var i = 0; i < nmax; i++) {
       var e = ag.events[i];
       hh += '<div class="ev"><div class="evTime">' + (e.time || "journée") + '</div><div><div class="evTitle">' + e.title + '</div>' + (e.loc ? '<div class="evLoc">' + e.loc + '</div>' : '') + '</div></div>';
     }
@@ -337,17 +351,33 @@ function buildCols(j) {
   return cols;
 }
 
+/* Alerte pluie : 1re heure à venir aujourd'hui avec pluie probable. */
+function computeRain(j) {
+  var H = j.hourly, now = new Date(), y = now.getFullYear(), mo = now.getMonth(), da = now.getDate(), nowH = now.getHours();
+  if (!H || !H.time) return null;
+  for (var k = 0; k < H.time.length; k++) {
+    var d = new Date(H.time[k]);
+    if (d.getFullYear() !== y || d.getMonth() !== mo || d.getDate() !== da) continue;
+    var hh = d.getHours(); if (hh < nowH) continue;
+    var prob = H.precipitation_probability ? H.precipitation_probability[k] : null;
+    var pr = H.precipitation ? H.precipitation[k] : 0;
+    if (hh === nowH && pr >= 0.2) return { now: true };
+    if ((prob != null && prob >= 50) || pr >= 0.5) return { now: false, hour: hh, prob: prob };
+  }
+  return null;
+}
+
 function loadWeather() {
   var url = "https://api.open-meteo.com/v1/forecast?latitude=" + LAT + "&longitude=" + LON +
     "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m" +
-    "&hourly=temperature_2m,weather_code" +
+    "&hourly=temperature_2m,weather_code,precipitation_probability,precipitation" +
     "&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset&timezone=Europe%2FParis&forecast_days=2";
   var xhr = new XMLHttpRequest(); xhr.open("GET", url); xhr.timeout = 12000;
   xhr.onload = function () {
     if (xhr.status === 200) { try {
       var j = JSON.parse(xhr.responseText), c = j.current, d = j.daily;
       WX = { temp: c.temperature_2m, feels: c.apparent_temperature, code: c.weather_code, wind: c.wind_speed_10m,
-             tmax: d.temperature_2m_max[0], tmin: d.temperature_2m_min[0], cols: buildCols(j) };
+             tmax: d.temperature_2m_max[0], tmin: d.temperature_2m_min[0], cols: buildCols(j), rain: computeRain(j) };
       lastLoad = new Date(); render();
     } catch (e) {} }
   };
