@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Domotique</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192;
+    --faint2:#bdb6a6; --line:#e8e3d7; --yellow:#f2b600; --yellowsoft:rgba(242,182,0,0.16);
+    --accent:#b7791f; --grid:#e8e3d7;
+    --ext:#3366cc; --cha:#d1701a; --sal:#8a4fbf;
+  }
+  :root[data-theme="dark"] {
+    --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a;
+    --faint2:#6f685c; --line:#332f27; --yellow:#f2b600; --yellowsoft:rgba(242,182,0,0.18);
+    --accent:#f2b600; --grid:#2c2922;
+    --ext:#6b9be8; --cha:#e8954a; --sal:#b98ae0;
+  }
+  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
+  body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
+  #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; background: var(--bg);
+           -webkit-transform-origin: 0 0; transform-origin: 0 0; }
+
+  #head { padding: 36px 60px 4px; }
+  #title { font-size: 48px; font-weight: 600; margin: 0; line-height: 1; }
+  #sub { font-size: 20px; color: var(--muted); margin-top: 8px; }
+
+  /* commandes lampes + scènes */
+  #controls { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin: 22px 60px 0; }
+  .room { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-right: 34px; }
+  .rIcon svg { width: 28px; height: 28px; display: block; margin-right: 10px; }
+  .rName { font-size: 24px; font-weight: 500; margin-right: 14px; }
+  .btn { font-size: 19px; font-weight: 600; padding: 8px 20px; border-radius: 12px; margin-left: 8px;
+         border: 2px solid var(--line); color: var(--muted); background: transparent;
+         -webkit-user-select: none; user-select: none; cursor: pointer; min-width: 54px; text-align: center; }
+  .btn.on { border-color: var(--yellow); color: var(--accent); }
+  .btn.act { background: var(--yellow); color: #2e2b26; border-color: var(--yellow); }
+  .btn.offact { background: var(--line); color: var(--ink); border-color: var(--line); }
+  #scenes { margin-left: auto; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; -webkit-justify-content: flex-end; justify-content: flex-end; }
+  .scn { font-size: 18px; font-weight: 500; padding: 8px 16px; border-radius: 19px; margin: 0 0 0 9px;
+         background: var(--panel); border: 1px solid var(--line); color: var(--ink);
+         -webkit-user-select: none; user-select: none; cursor: pointer; }
+  .scn.act { background: var(--yellow); border-color: var(--yellow); color: #2e2b26; }
+
+  /* légende = identité + valeur actuelle */
+  #legend { display: -webkit-flex; display: flex; margin: 26px 60px 0; }
+  .lg { display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline; margin-right: 40px; }
+  .lgDot { width: 14px; height: 14px; border-radius: 7px; -webkit-flex: none; flex: none; margin-right: 10px; position: relative; top: 1px; }
+  .lgName { font-size: 21px; color: var(--muted); margin-right: 10px; }
+  .lgVal { font-size: 26px; font-weight: 700; }
+
+  #chartWrap { margin: 10px 60px 0; }
+  #chart svg { display: block; }
+  .axlbl { fill: var(--faint); font-size: 17px; }
+  .endlbl { fill: var(--ink); font-size: 20px; font-weight: 700; }
+
+  #foot { position: absolute; left: 60px; right: 60px; bottom: 14px; font-size: 13px; color: var(--faint2); }
+  #foot span { float: right; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <h1 id="title">Maison</h1>
+    <div id="sub">Lumières et températures de la journée</div>
+  </div>
+
+  <div id="controls">
+    <div class="room">
+      <div class="rIcon"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 1 4 10.5c-.7.7-1 1.3-1 2.5H9c0-1.2-.3-1.8-1-2.5A6 6 0 0 1 12 3z" fill="none" stroke="#b7791f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="rName">Chambre</div>
+      <div class="btn on" onclick="light('chambre','on',this)">On</div>
+      <div class="btn" onclick="light('chambre','off',this)">Off</div>
+    </div>
+    <div class="room">
+      <div class="rIcon"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 1 4 10.5c-.7.7-1 1.3-1 2.5H9c0-1.2-.3-1.8-1-2.5A6 6 0 0 1 12 3z" fill="none" stroke="#b7791f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="rName">Salon</div>
+      <div class="btn on" onclick="light('salon','on',this)">On</div>
+      <div class="btn" onclick="light('salon','off',this)">Off</div>
+    </div>
+    <div id="scenes">
+      <div class="scn" onclick="scene('film',this)">Film</div>
+      <div class="scn" onclick="scene('nuit',this)">Bonne nuit</div>
+      <div class="scn" onclick="scene('off',this)">Tout éteindre</div>
+    </div>
+  </div>
+
+  <div id="legend"></div>
+  <div id="chartWrap"><div id="chart"></div></div>
+
+  <div id="foot">Thermomètres Tuya · extérieur Open-Meteo. Courbe de la journée.<span id="src"></span></div>
+</div>
+
+<script>
+var LIGHT_URL = "";   /* Worker Tuya (lampes + scènes) */
+var TEMP_URL = "";    /* Worker Tuya : historique intérieur du jour { chambre:[{h,t}], salon:[{h,t}] } */
+var LAT = 48.8938, LON = 2.2870;
+var REFRESH_MIN = 10;
+
+function el(id) { return document.getElementById(id); }
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+
+function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
+function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
+function cssVar(name) { try { return getComputedStyle(document.documentElement).getPropertyValue(name).replace(/\s/g, "") || "#888"; } catch (e) { return "#888"; } }
+
+/* ---------- lampes / scènes ---------- */
+function light(room, cmd, btn) {
+  var bs = btn.parentNode.getElementsByClassName("btn"), i;
+  for (i = 0; i < bs.length; i++) { bs[i].className = bs[i].className.replace(/\s*(act|offact)/g, ""); }
+  btn.className += (cmd === "on" ? " act" : " offact");
+  if (!LIGHT_URL) return;
+  try { var x = new XMLHttpRequest(); x.open("GET", LIGHT_URL + "?room=" + encodeURIComponent(room) + "&cmd=" + cmd); x.timeout = 8000; x.send(); } catch (e) {}
+}
+function scene(name, btn) {
+  var ss = el("scenes").getElementsByClassName("scn"), i;
+  for (i = 0; i < ss.length; i++) { ss[i].className = ss[i].className.replace(/\s*act/g, ""); }
+  btn.className += " act";
+  setTimeout(function () { btn.className = btn.className.replace(/\s*act/g, ""); }, 1500);
+  if (!LIGHT_URL) return;
+  try { var x = new XMLHttpRequest(); x.open("GET", LIGHT_URL + "?scene=" + encodeURIComponent(name)); x.timeout = 8000; x.send(); } catch (e) {}
+}
+
+/* ---------- données ---------- */
+var EXT = null, IN = null, lastLoad = null;
+
+function mockInside() {
+  var cha = [], sal = [];
+  for (var h = 0; h <= 24; h++) {
+    cha.push({ h: h, t: 20.5 + 1.4 * Math.sin((h - 9) / 24 * 6.28) + (h > 18 ? 0.6 : 0) });
+    sal.push({ h: h, t: 21.5 + 1.8 * Math.sin((h - 11) / 24 * 6.28) + (h > 19 ? 0.8 : 0) });
+  }
+  return { chambre: cha, salon: sal };
+}
+
+function series() {
+  var inn = IN || mockInside();
+  return [
+    { key: "ext", name: "Extérieur", color: cssVar("--ext"), pts: EXT || [] },
+    { key: "cha", name: "Chambre", color: cssVar("--cha"), pts: inn.chambre || [] },
+    { key: "sal", name: "Salon", color: cssVar("--sal"), pts: inn.salon || [] }
+  ];
+}
+
+function lastVal(pts) { return (pts && pts.length) ? pts[pts.length - 1].t : null; }
+
+function renderLegend(ser) {
+  var h = "";
+  for (var i = 0; i < ser.length; i++) {
+    var v = lastVal(ser[i].pts), vs = (v == null) ? "—" : (Math.round(v * 10) / 10).toFixed(1) + "°";
+    h += '<div class="lg"><span class="lgDot" style="background:' + ser[i].color + '"></span><span class="lgName">' + ser[i].name + '</span><span class="lgVal">' + vs + '</span></div>';
+  }
+  el("legend").innerHTML = h;
+}
+
+function buildChart(ser) {
+  var W = 1160, H = 348, padL = 46, padR = 96, padT = 16, padB = 30;
+  var ymin = 1e9, ymax = -1e9, i, j, any = false;
+  for (i = 0; i < ser.length; i++) { for (j = 0; j < ser[i].pts.length; j++) { var t = ser[i].pts[j].t; if (t < ymin) ymin = t; if (t > ymax) ymax = t; any = true; } }
+  if (!any) { ymin = 10; ymax = 25; }
+  ymin = Math.floor(ymin - 1); ymax = Math.ceil(ymax + 1);
+  if (ymax - ymin < 4) ymax = ymin + 4;
+  function X(h) { return padL + (h / 24) * (W - padL - padR); }
+  function Y(t) { return padT + (1 - (t - ymin) / (ymax - ymin)) * (H - padT - padB); }
+  var grid = cssVar("--grid"), s = "";
+  /* grille horizontale + labels Y */
+  var yticks = 4, k;
+  for (k = 0; k <= yticks; k++) {
+    var ty = ymin + (ymax - ymin) * k / yticks, yy = Y(ty);
+    s += '<line x1="' + padL + '" y1="' + yy + '" x2="' + (W - padR) + '" y2="' + yy + '" stroke="' + grid + '" stroke-width="1"/>';
+    s += '<text class="axlbl" x="' + (padL - 10) + '" y="' + (yy + 6) + '" text-anchor="end">' + Math.round(ty) + '°</text>';
+  }
+  /* labels X toutes les 3 h */
+  for (k = 0; k <= 24; k += 3) {
+    s += '<text class="axlbl" x="' + X(k) + '" y="' + (H - 8) + '" text-anchor="middle">' + (k === 24 ? "0" : k) + 'h</text>';
+  }
+  /* lignes */
+  for (i = 0; i < ser.length; i++) {
+    var pts = ser[i].pts; if (!pts || !pts.length) continue;
+    var d = "";
+    for (j = 0; j < pts.length; j++) { d += (j ? "L" : "M") + X(pts[j].h) + " " + Y(pts[j].t); }
+    s += '<path d="' + d + '" fill="none" stroke="' + ser[i].color + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+    var lp = pts[pts.length - 1];
+    s += '<circle cx="' + X(lp.h) + '" cy="' + Y(lp.t) + '" r="4.5" fill="' + ser[i].color + '"/>';
+    s += '<text class="endlbl" x="' + (X(lp.h) + 10) + '" y="' + (Y(lp.t) + 6) + '">' + (Math.round(lp.t * 10) / 10).toFixed(1) + '°</text>';
+  }
+  el("chart").innerHTML = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + s + '</svg>';
+}
+
+function render() {
+  applyTheme();
+  var ser = series();
+  renderLegend(ser);
+  buildChart(ser);
+  el("src").innerHTML = lastLoad ? "Maj " + hhmm(lastLoad) : "Exemple";
+}
+
+function loadExt() {
+  var url = "https://api.open-meteo.com/v1/forecast?latitude=" + LAT + "&longitude=" + LON +
+    "&hourly=temperature_2m&timezone=Europe%2FParis&forecast_days=1";
+  var x = new XMLHttpRequest(); x.open("GET", url); x.timeout = 12000;
+  x.onload = function () {
+    if (x.status === 200) { try {
+      var j = JSON.parse(x.responseText), H = j.hourly, pts = [], now = new Date();
+      for (var k = 0; k < H.time.length; k++) {
+        var d = new Date(H.time[k]);
+        if (d.getDate() === now.getDate() && d.getMonth() === now.getMonth()) {
+          if (d.getTime() <= now.getTime() || d.getHours() === 0) pts.push({ h: d.getHours(), t: H.temperature_2m[k] });
+        }
+      }
+      EXT = pts; lastLoad = new Date(); render();
+    } catch (e) {} }
+  };
+  x.send();
+}
+function loadInside() {
+  if (!TEMP_URL) { IN = null; render(); return; }
+  var x = new XMLHttpRequest(); x.open("GET", TEMP_URL); x.timeout = 12000;
+  x.onload = function () { if (x.status === 200) { try { IN = JSON.parse(x.responseText); lastLoad = new Date(); render(); } catch (e) {} } };
+  x.send();
+}
+function loadAll() { loadExt(); loadInside(); }
+
+function fit() {
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800), st = el("stage").style;
+  st.webkitTransform = st.transform = "scale(" + s + ")";
+  st.left = ((window.innerWidth - 1280 * s) / 2) + "px";
+  st.top = ((window.innerHeight - 800 * s) / 2) + "px";
+}
+window.onresize = fit; fit(); applyTheme();
+
+render();
+loadAll();
+setInterval(loadAll, REFRESH_MIN * 60000);
+</script>
+</body>
+</html>
