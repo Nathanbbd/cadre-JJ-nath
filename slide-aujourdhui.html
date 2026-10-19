@@ -39,12 +39,14 @@
   #wcHL { font-size: 24px; color: var(--muted); margin-top: 4px; }
   #wcHL b { color: var(--ink); font-weight: 600; }
 
-  #wcHours { display: -webkit-flex; display: flex; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
-  .hr { -webkit-flex: 1; flex: 1; text-align: center; }
-  .hr .hl { font-size: 19px; color: var(--muted); }
-  .hr .hi { height: 44px; margin: 6px 0 4px; }
-  .hr .ht { font-size: 24px; font-weight: 600; }
+  #wcHours { display: -webkit-flex; display: flex; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+  .hr { -webkit-flex: 1; flex: 1; text-align: center; padding: 4px 0; border-radius: 10px; }
+  .hr .hl { font-size: 15px; color: var(--muted); }
+  .hr .hi { height: 34px; margin: 3px 0 2px; }
+  .hr .ht { font-size: 19px; font-weight: 600; }
   .hr.sun .hl { color: var(--accent); font-weight: 600; }
+  .hr.now { background: var(--yellowsoft); }
+  .hr.now .hl { color: var(--soon); font-weight: 700; }
 
   /* bas : lumières à gauche, agenda à droite */
   #lower { display: -webkit-flex; display: flex; margin: 20px 60px 0; }
@@ -203,6 +205,12 @@ function wIcon(code, px) {
   else g = cloud;
   return '<svg viewBox="0 0 128 128" width="' + px + '" height="' + px + '">' + g + '</svg>';
 }
+function moonIcon(code, px) {
+  var m = (currentTheme() === "dark") ? "#e8dfae" : "#c9a227", c = C("cloud");
+  var moon = '<path d="M78 64a30 30 0 1 1-30-30 24 24 0 0 0 30 30z" fill="' + m + '"/>';
+  if (code === 2) { var cloud = '<path d="M42 90h46a17 17 0 0 0 2-34 24 24 0 0 0-30-10 19 19 0 0 0-18 44z" fill="' + c + '"/>'; return '<svg viewBox="0 0 128 128" width="' + px + '" height="' + px + '"><path d="M70 50a22 22 0 1 1-22-22 18 18 0 0 0 22 22z" fill="' + m + '"/>' + cloud + '</svg>'; }
+  return '<svg viewBox="0 0 128 128" width="' + px + '" height="' + px + '">' + moon + '</svg>';
+}
 function sunsetIcon(px) {
   var s = C("sun"), m = C("cloud");
   var g = '<g>'
@@ -245,9 +253,13 @@ function renderWeather() {
   el("wcHL").innerHTML = "&#8593; <b>" + Math.round(WX.tmax) + "°</b>&nbsp;&nbsp;&#8595; <b>" + Math.round(WX.tmin) + "°</b>";
   var h = "", cols = WX.cols || [];
   for (var i = 0; i < cols.length; i++) {
-    var col = cols[i], ic = (col.type === "sunset" || col.type === "sunrise") ? sunsetIcon(44) : wIcon(col.code, 44);
+    var col = cols[i], ic;
+    if (col.type === "sunset" || col.type === "sunrise") ic = sunsetIcon(34);
+    else if (col.night && col.code <= 2) ic = moonIcon(col.code, 34);
+    else ic = wIcon(col.code, 34);
     var tt = (col.temp == null) ? "" : (Math.round(col.temp) + "°");
-    h += '<div class="hr' + (col.type !== "hour" ? " sun" : "") + '"><div class="hl">' + col.label + '</div><div class="hi">' + ic + '</div><div class="ht">' + tt + '</div></div>';
+    var cls = "hr" + (col.type !== "hour" ? " sun" : "") + (col.now ? " now" : "");
+    h += '<div class="' + cls + '"><div class="hl">' + col.label + '</div><div class="hi">' + ic + '</div><div class="ht">' + tt + '</div></div>';
   }
   el("wcHours").innerHTML = h;
 }
@@ -287,30 +299,41 @@ function render() {
 }
 
 /* ---------- météo : courant + heures + coucher du soleil ---------- */
+/* Bande fixe de la journée : 6 h → minuit. */
 function buildCols(j) {
-  var H = j.hourly, now = new Date(), i, idx = 0;
-  for (i = 0; i < H.time.length; i++) {
-    var d = new Date(H.time[i]);
-    if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate() && d.getHours() === now.getHours()) { idx = i; break; }
+  var H = j.hourly, now = new Date(), i;
+  function findHour(y, mo, da, hh) {
+    for (var k = 0; k < H.time.length; k++) {
+      var d = new Date(H.time[k]);
+      if (d.getFullYear() === y && d.getMonth() === mo && d.getDate() === da && d.getHours() === hh) return k;
+    }
+    return -1;
   }
-  var cols = [];
-  for (i = idx; i < idx + 6 && i < H.time.length; i++) {
-    var dt = new Date(H.time[i]);
-    cols.push({ t: dt.getTime(), label: dt.getHours() + " h", code: H.weather_code[i], temp: H.temperature_2m[i], type: "hour" });
+  var y = now.getFullYear(), mo = now.getMonth(), da = now.getDate(), cols = [], idx, d;
+  var sr0 = (j.daily && j.daily.sunrise) ? new Date(j.daily.sunrise[0]).getTime() : 0;
+  var ss0 = (j.daily && j.daily.sunset) ? new Date(j.daily.sunset[0]).getTime() : 0;
+  function isNight(t) { return (sr0 && ss0) ? (t < sr0 || t >= ss0) : false; }
+  for (var hh = 6; hh <= 23; hh++) {
+    idx = findHour(y, mo, da, hh); if (idx < 0) continue;
+    d = new Date(H.time[idx]);
+    cols.push({ t: d.getTime(), label: hh + " h", code: H.weather_code[idx], temp: H.temperature_2m[idx], type: "hour",
+                now: (now.getHours() === hh), night: isNight(d.getTime()) });
   }
+  /* minuit (0 h du lendemain) */
+  var tom = new Date(y, mo, da + 1);
+  idx = findHour(tom.getFullYear(), tom.getMonth(), tom.getDate(), 0);
+  if (idx >= 0) { d = new Date(H.time[idx]); cols.push({ t: d.getTime(), label: "minuit", code: H.weather_code[idx], temp: H.temperature_2m[idx], type: "hour", night: true }); }
   if (!cols.length) return cols;
-  var last = cols[cols.length - 1].t;
-  var evs = [];
-  if (j.daily && j.daily.sunset) { for (i = 0; i < j.daily.sunset.length; i++) evs.push({ t: new Date(j.daily.sunset[i]).getTime(), type: "sunset" }); }
-  if (j.daily && j.daily.sunrise) { for (i = 0; i < j.daily.sunrise.length; i++) evs.push({ t: new Date(j.daily.sunrise[i]).getTime(), type: "sunrise" }); }
-  for (i = 0; i < evs.length; i++) {
-    if (evs[i].t > now.getTime() && evs[i].t <= last) {
-      var ed = new Date(evs[i].t);
-      cols.push({ t: evs[i].t, label: hhmm(ed), temp: null, type: evs[i].type });
+  /* coucher du soleil du jour, inséré dans la bande */
+  if (j.daily && j.daily.sunset) {
+    for (i = 0; i < j.daily.sunset.length; i++) {
+      var ss = new Date(j.daily.sunset[i]).getTime();
+      if (ss >= cols[0].t && ss <= cols[cols.length - 1].t) {
+        cols.push({ t: ss, label: hhmm(new Date(ss)), temp: null, type: "sunset" });
+      }
     }
   }
   cols.sort(function (a, b) { return a.t - b.t; });
-  if (cols.length > 6) cols = cols.slice(0, 6);
   return cols;
 }
 
