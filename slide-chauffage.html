@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chauffage</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192; --faint2:#bdb6a6;
+    --line:#e8e3d7; --yellow:#f2b600; --accent:#b7791f; --heat:#d1701a; --heatsoft:rgba(209,112,26,0.14);
+    --cool:#3366cc; --idle:#c9c2b2;
+  }
+  :root[data-theme="dark"] {
+    --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a; --faint2:#6f685c;
+    --line:#332f27; --yellow:#f2b600; --accent:#f2b600; --heat:#e8954a; --heatsoft:rgba(232,149,74,0.16);
+    --cool:#6b9be8; --idle:#4a453b;
+  }
+  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
+  body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); -webkit-user-select: none; user-select: none; }
+  #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; background: var(--bg);
+           -webkit-transform-origin: 0 0; transform-origin: 0 0; }
+
+  #head { padding: 36px 60px 0; display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; }
+  #title { font-size: 48px; font-weight: 600; margin: 0; line-height: 1; }
+  #sub { font-size: 22px; color: var(--muted); margin-left: auto; text-align: right; }
+  #sub b { color: var(--ink); font-weight: 600; }
+
+  #rooms { position: absolute; left: 60px; right: 60px; top: 120px; bottom: 50px;
+           display: -webkit-flex; display: flex; }
+  .room { -webkit-flex: 1; flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 22px;
+          display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column;
+          -webkit-align-items: center; align-items: center; padding: 22px 20px 20px; }
+  .room + .room { margin-left: 28px; }
+  .rName { font-size: 30px; font-weight: 600; }
+  .dial { position: relative; width: 330px; height: 300px; margin-top: 22px; }
+  .dial svg { position: absolute; left: 0; top: 0; }
+  .center { position: absolute; left: 0; right: 0; top: 92px; text-align: center; }
+  .now { font-size: 104px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  .now sup { font-size: 40px; font-weight: 600; vertical-align: top; position: relative; top: 8px; }
+  .sp { font-size: 22px; color: var(--muted); margin-top: 6px; }
+  .sp b { color: var(--ink); }
+  .status { font-size: 24px; font-weight: 600; margin-top: 4px; min-height: 30px; text-align: center; color: var(--muted); }
+  .status.on { color: var(--heat); } .status.win { color: var(--cool); }
+  .ctrls { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-top: auto; }
+  .rb { width: 70px; height: 70px; border-radius: 35px; border: 2px solid var(--line); background: var(--bg);
+        font-size: 38px; line-height: 64px; text-align: center; color: var(--ink); cursor: pointer; }
+  .rb.dis { opacity: .35; }
+  .boost { height: 58px; line-height: 54px; padding: 0 26px; margin: 0 22px; border-radius: 29px; border: 2px solid var(--heat);
+           color: var(--heat); font-size: 22px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .boost.on { background: var(--heat); color: #fff; }
+  .boost.dis { opacity: .35; }
+
+  #foot { position: absolute; left: 60px; right: 60px; bottom: 14px; font-size: 14px; color: var(--faint2); }
+  #lock { float: right; cursor: pointer; padding: 0 0 0 20px; }
+  #setup { display: none; position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,.35); }
+  #setup .box { position: absolute; left: 340px; top: 220px; width: 600px; background: var(--panel); border-radius: 20px; padding: 30px; }
+  #setup h2 { margin: 0 0 8px; font-size: 30px; }
+  #setup p { font-size: 18px; color: var(--muted); margin: 0 0 18px; }
+  #setup input { width: 100%; box-sizing: border-box; font-size: 24px; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--ink); }
+  #setup .row { display: -webkit-flex; display: flex; margin-top: 18px; }
+  #setup .sb { -webkit-flex: 1; flex: 1; text-align: center; font-size: 22px; font-weight: 600; padding: 12px; border-radius: 12px; border: 2px solid var(--line); cursor: pointer; }
+  #setup .sb + .sb { margin-left: 12px; }
+  #setup .sb.main { background: var(--yellow); border-color: var(--yellow); color: #2e2b26; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <h1 id="title">Chauffage</h1>
+    <div id="sub"></div>
+  </div>
+  <div id="rooms"></div>
+  <div id="foot">Thermomètres Tuya · radiateurs pilotés par le Worker « tuya appart ».<span id="lock">🔒 Code d’accès</span><span id="src" style="float:right"></span></div>
+
+  <div id="setup"><div class="box">
+    <h2>Code d’accès du chauffage</h2>
+    <p>Le même que dans l’app chauffage. Il reste enregistré sur ce cadre uniquement, jamais dans le code du site.</p>
+    <input id="tokenIn" type="password" autocomplete="off">
+    <div class="row"><div class="sb" id="tokClear">Effacer</div><div class="sb" id="tokCancel">Annuler</div><div class="sb main" id="tokOk">Enregistrer</div></div>
+  </div></div>
+</div>
+
+<script>
+var WORKER = "https://tuya-appart.boisbourdinnathande.workers.dev";
+var REFRESH_S = 60;
+var ROOMS = [{ id: "salon", name: "Salon" }, { id: "chambre", name: "Chambre" }];   /* salon à gauche, chambre à droite */
+/* Vitesse de chauffe mesurée (min par °C) : plus lente au-delà de 20 °C (thermostat du radiateur à 7/8) */
+var RATE = { salon: 10, chambre: 15 }, HIGH = 20, HIGH_FACTOR = 1.7;
+var PROFILES = { maison: "À la maison", nuit: "Nuit", absent: "Absent", vacances: "Vacances" };
+var TOKEN_KEY = "cadre_chauffage_token";
+
+function el(id) { return document.getElementById(id); }
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function hhmm(t) { var d = new Date(t); return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function token() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
+function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
+function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
+
+/* ---------- appels au Worker ---------- */
+function call(method, path, body, cb) {
+  var x = new XMLHttpRequest(); x.open(method, WORKER + path); x.timeout = 12000;
+  if (token()) x.setRequestHeader("Authorization", "Bearer " + token());
+  if (body) x.setRequestHeader("Content-Type", "application/json");
+  x.onload = function () { var j = null; try { j = JSON.parse(x.responseText); } catch (e) {} cb(x.status, j); };
+  x.onerror = x.ontimeout = function () { cb(0, null); };
+  x.send(body ? JSON.stringify(body) : null);
+}
+
+/* ---------- état ---------- */
+var rooms = {}, pres = null, full = false, lastLoad = null, pending = {};
+
+function load() {
+  if (token()) {
+    call("GET", "/rooms", null, function (st, j) {
+      if (st === 200 && j && j.length) {
+        full = true; rooms = {}; for (var i = 0; i < j.length; i++) rooms[j[i].id] = j[i];
+        lastLoad = Date.now(); render();
+        call("GET", "/presence", null, function (s2, p) { if (s2 === 200) { pres = p; render(); } });
+      } else loadPublic(st === 401 ? "Code d’accès refusé" : "");
+    });
+  } else loadPublic("");
+}
+/* Sans code : seulement les températures (lecture publique déjà utilisée par la slide Domotique) */
+function loadPublic(msg) {
+  call("GET", "/", null, function (st, j) {
+    full = false; pres = null;
+    if (st === 200 && j && j.now) { rooms = { salon: { id: "salon", temp: j.now.salon }, chambre: { id: "chambre", temp: j.now.chambre } }; lastLoad = Date.now(); }
+    render(msg || "Touchez « Code d’accès » pour afficher et régler le chauffage");
+  });
+}
+
+/* ---------- estimations ---------- */
+function stepMin(id, lvl) { var r = RATE[id] || 12; return lvl >= HIGH ? Math.round(r * HIGH_FACTOR) : r; }
+function etaText(s) {
+  if (s.mode !== "auto" || s.boost || s.window || typeof s.setpoint !== "number" || s.temp == null || s.setpoint <= s.temp) return "";
+  var m = 0; for (var l = Math.round(s.temp); l < s.setpoint; l++) m += stepMin(s.id, l);
+  var t = Math.ceil((Date.now() + m * 60000) / 300000) * 300000;
+  return ", vers " + hhmm(t);
+}
+function boostEnd(s) {
+  var left = Math.max(0, (s.boost - Date.now()) / 60000), t = Math.round(s.temp);
+  while (t < 25 && left >= stepMin(s.id, t)) { left -= stepMin(s.id, t); t++; }
+  if (t < 25 && left >= stepMin(s.id, t) / 2) t++;
+  return t;
+}
+
+/* ---------- affichage ---------- */
+var C = 165, R = 140;
+function ang(v) { return 135 + (Math.max(14, Math.min(26, v)) - 14) / 12 * 270; }
+function pt(a) { var r = a * Math.PI / 180; return [C + R * Math.cos(r), 150 + R * Math.sin(r)]; }
+function arc(a1, a2) { if (a2 - a1 < 0.5) a2 = a1 + 0.5; var p = pt(a1), q = pt(a2);
+  return "M" + p[0] + " " + p[1] + " A" + R + " " + R + " 0 " + (a2 - a1 > 180 ? 1 : 0) + " 1 " + q[0] + " " + q[1]; }
+
+function statusOf(s) {
+  if (!full) return ["", ""];
+  if (s.window) return ["Fenêtre ouverte, coupé jusqu’à " + hhmm(s.window), "win"];
+  if (s.boost) { var e = boostEnd(s); return ["Boost jusqu’à " + hhmm(s.boost) + (e > Math.round(s.temp) ? ", ≈ " + e + " °C" : ""), "on"]; }
+  if (s.mode === "confort") return ["Confort forcé", "on"];
+  if (s.mode === "eco") return ["Eco forcé", ""];
+  if (s.mode === "horsgel" || s.setpoint == null) return ["Chauffage coupé", "win"];
+  if (s.heating) return ["Chauffe pour " + s.setpoint + " °C" + etaText(s), "on"];
+  return ["Consigne tenue", ""];
+}
+
+function render(note) {
+  applyTheme();
+  var h = "";
+  for (var i = 0; i < ROOMS.length; i++) {
+    var r = ROOMS[i], s = rooms[r.id] || { id: r.id }, temp = s.temp, sp = pending[r.id] != null ? pending[r.id] : s.setpoint;
+    var col = s.heating || s.boost ? "var(--heat)" : (s.window || (full && sp == null) ? "var(--cool)" : "var(--idle)");
+    var st = statusOf(s), auto = full && s.mode === "auto" && !s.window;
+    var svg = '<svg width="330" height="300" viewBox="0 0 330 300">';
+    for (var v = 14; v <= 26; v++) { var a = ang(v) * Math.PI / 180, r1 = R + 16, r2 = R + (v % 2 ? 20 : 24);
+      svg += '<line x1="' + (C + r1 * Math.cos(a)) + '" y1="' + (150 + r1 * Math.sin(a)) + '" x2="' + (C + r2 * Math.cos(a)) + '" y2="' + (150 + r2 * Math.sin(a)) + '" stroke="var(--line)" stroke-width="2.5" stroke-linecap="round"/>'; }
+    svg += '<path d="' + arc(135, 405) + '" fill="none" stroke="var(--line)" stroke-width="18" stroke-linecap="round"/>';
+    if (temp != null) svg += '<path d="' + arc(135, ang(temp)) + '" fill="none" stroke="' + col + '" stroke-width="18" stroke-linecap="round"/>';
+    if (typeof sp === "number") { var k = pt(ang(sp)); svg += '<circle cx="' + k[0] + '" cy="' + k[1] + '" r="17" fill="var(--panel)" stroke="var(--ink)" stroke-width="3.5"/>'; }
+    svg += '</svg>';
+    h += '<div class="room"><div class="rName">' + r.name + '</div><div class="dial">' + svg +
+      '<div class="center"><div class="now">' + (temp == null ? "–" : Math.round(temp) + "<sup>°</sup>") + '</div>' +
+      (full ? '<div class="sp">Consigne <b>' + (typeof sp === "number" ? sp + " °C" : "Hors-gel") + '</b></div>' : '') + '</div></div>' +
+      '<div class="status ' + st[1] + '">' + st[0] + '</div>' +
+      (full ? '<div class="ctrls">' +
+        '<div class="rb' + (auto ? '' : ' dis') + '" data-room="' + r.id + '" data-act="minus">−</div>' +
+        '<div class="boost' + (s.boost ? ' on' : '') + (s.window ? ' dis' : '') + '" data-room="' + r.id + '" data-act="boost">' + (s.boost ? "Arrêter le boost" : "Boost 30 min") + '</div>' +
+        '<div class="rb' + (auto ? '' : ' dis') + '" data-room="' + r.id + '" data-act="plus">+</div></div>' : '') +
+      '</div>';
+  }
+  el("rooms").innerHTML = h;
+
+  var sub = "";
+  if (full && pres) {
+    sub = "<b>" + (PROFILES[pres.profile] || pres.profile) + "</b>";
+    if (pres.autoPresence && pres.people) {
+      var here = []; for (var p in pres.people) { var v2 = pres.people[p]; if (v2 && (v2.home || v2.leaving)) here.push(p === "jade" ? "Jade" : "Nathan"); }
+      sub += " · " + (here.length === 2 ? "Nathan et Jade sont là" : here.length === 1 ? here[0] + " est là" : "personne à l’appart");
+    }
+  } else if (note) sub = note;
+  el("sub").innerHTML = sub;
+  el("src").innerHTML = lastLoad ? "Maj " + hhmm(lastLoad) + " · " : "";
+}
+
+/* ---------- boutons ---------- */
+var spTimer = {};
+el("rooms").onclick = function (e) {
+  try { parent.postMessage("cadre-stay", "*"); } catch (x) {}       /* on reste sur cette slide pendant qu'on règle */
+  var b = e.target; while (b && !b.getAttribute("data-act")) b = b.parentNode;
+  if (!b || / dis/.test(b.className)) return;
+  var id = b.getAttribute("data-room"), act = b.getAttribute("data-act"), s = rooms[id]; if (!s) return;
+  if (act === "boost") { call("POST", "/rooms/" + id, { boost: !s.boost }, function () { load(); }); return; }
+  var base = pending[id] != null ? pending[id] : (typeof s.setpoint === "number" ? s.setpoint : 19);
+  pending[id] = Math.max(15, Math.min(25, base + (act === "plus" ? 1 : -1))); render();
+  clearTimeout(spTimer[id]);
+  spTimer[id] = setTimeout(function () {
+    call("POST", "/rooms/" + id, { setpoint: pending[id] }, function () { delete pending[id]; load(); });
+  }, 900);
+};
+
+/* ---------- code d'accès (stocké sur ce cadre uniquement) ---------- */
+el("lock").onclick = function () { try { parent.postMessage("cadre-stay", "*"); } catch (x) {} el("tokenIn").value = token(); el("setup").style.display = "block"; };
+el("tokCancel").onclick = function () { el("setup").style.display = "none"; };
+el("tokClear").onclick = function () { try { localStorage.removeItem(TOKEN_KEY); } catch (e) {} el("setup").style.display = "none"; load(); };
+el("tokOk").onclick = function () { try { localStorage.setItem(TOKEN_KEY, el("tokenIn").value.trim()); } catch (e) {} el("setup").style.display = "none"; load(); };
+
+function fit() {
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800), st = el("stage").style;
+  st.webkitTransform = st.transform = "scale(" + s + ")";
+  st.left = ((window.innerWidth - 1280 * s) / 2) + "px";
+  st.top = ((window.innerHeight - 800 * s) / 2) + "px";
+}
+window.onresize = fit; fit(); applyTheme();
+render(); load();
+setInterval(load, REFRESH_S * 1000);
+</script>
+</body>
+</html>
