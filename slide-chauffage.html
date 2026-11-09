@@ -23,7 +23,11 @@
 
   #head { padding: 36px 60px 0; display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; }
   #title { font-size: 48px; font-weight: 600; margin: 0; line-height: 1; }
-  #sub { font-size: 22px; color: var(--muted); margin-left: auto; text-align: right; }
+  #sub { font-size: 21px; color: var(--muted); margin-left: auto; text-align: right; max-width: 470px; line-height: 1.25; }
+  #modes { display: -webkit-flex; display: flex; margin-left: 34px; position: relative; top: -4px; }
+  .md { font-size: 20px; font-weight: 600; padding: 9px 18px; border-radius: 20px; border: 2px solid var(--line);
+        color: var(--muted); margin-right: 10px; cursor: pointer; white-space: nowrap; }
+  .md.act { background: var(--yellow); border-color: var(--yellow); color: #2e2b26; }
   #sub b { color: var(--ink); font-weight: 600; }
 
   #rooms { position: absolute; left: 60px; right: 60px; top: 120px; bottom: 50px;
@@ -33,9 +37,9 @@
           -webkit-align-items: center; align-items: center; padding: 22px 20px 20px; }
   .room + .room { margin-left: 28px; }
   .rName { font-size: 30px; font-weight: 600; }
-  .dial { position: relative; width: 330px; height: 300px; margin-top: 22px; }
+  .dial { position: relative; width: 330px; height: 280px; margin-top: 18px; }
   .dial svg { position: absolute; left: 0; top: 0; }
-  .center { position: absolute; left: 0; right: 0; top: 92px; text-align: center; }
+  .center { position: absolute; left: 0; right: 0; top: 86px; text-align: center; }
   .now { font-size: 104px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
   .now sup { font-size: 40px; font-weight: 600; vertical-align: top; position: relative; top: 8px; }
   .sp { font-size: 22px; color: var(--muted); margin-top: 6px; }
@@ -50,6 +54,11 @@
            color: var(--heat); font-size: 22px; font-weight: 600; cursor: pointer; white-space: nowrap; }
   .boost.on { background: var(--heat); color: #fff; }
   .boost.dis { opacity: .35; }
+  .winrow { display: -webkit-flex; display: flex; margin-top: 14px; min-height: 46px; }
+  .wb { font-size: 19px; font-weight: 600; padding: 0 16px; height: 44px; line-height: 40px; border-radius: 12px;
+        border: 2px solid var(--line); color: var(--cool); cursor: pointer; white-space: nowrap; }
+  .wb + .wb { margin-left: 8px; }
+  .wb.x { color: var(--muted); }
 
   #foot { position: absolute; left: 60px; right: 60px; bottom: 14px; font-size: 14px; color: var(--faint2); }
   #lock { float: right; cursor: pointer; padding: 0 0 0 20px; }
@@ -68,6 +77,7 @@
 <div id="stage">
   <div id="head">
     <h1 id="title">Chauffage</h1>
+    <div id="modes"></div>
     <div id="sub"></div>
   </div>
   <div id="rooms"></div>
@@ -93,6 +103,12 @@ var TOKEN_KEY = "cadre_chauffage_token";
 function el(id) { return document.getElementById(id); }
 function pad(n) { return n < 10 ? "0" + n : "" + n; }
 function hhmm(t) { var d = new Date(t); return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+function dayShort(t) {
+  var d = new Date(t), today = new Date(), tom = new Date(); tom.setDate(today.getDate() + 1);
+  var j = d.toDateString() === today.toDateString() ? "aujourd’hui" : d.toDateString() === tom.toDateString() ? "demain"
+    : d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+  return j + " à " + hhmm(t);
+}
 function token() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
 function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
 function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
@@ -145,6 +161,17 @@ function boostEnd(s) {
   return t;
 }
 
+/* ---------- fenêtre ouverte : « J'ouvre une fenêtre » puis la durée ---------- */
+var winPick = {};
+function winRow(s) {
+  if (s.window) return '<div class="winrow"><div class="wb" data-room="' + s.id + '" data-act="winclose">C’est fermé, reprendre</div></div>';
+  if (s.mode === "horsgel" || (s.setpoint == null && s.mode === "auto")) return '<div class="winrow"></div>';
+  if (!winPick[s.id]) return '<div class="winrow"><div class="wb" data-room="' + s.id + '" data-act="winpick">J’ouvre une fenêtre</div></div>';
+  var h = '<div class="winrow">', ch = [[15, "15 min"], [30, "30 min"], [60, "1 h"], [120, "2 h"]];
+  for (var i = 0; i < ch.length; i++) h += '<div class="wb" data-room="' + s.id + '" data-act="win" data-min="' + ch[i][0] + '">' + ch[i][1] + '</div>';
+  return h + '<div class="wb x" data-room="' + s.id + '" data-act="wincancel">×</div></div>';
+}
+
 /* ---------- affichage ---------- */
 var C = 165, R = 140;
 function ang(v) { return 135 + (Math.max(14, Math.min(26, v)) - 14) / 12 * 270; }
@@ -158,6 +185,8 @@ function statusOf(s) {
   if (s.boost) { var e = boostEnd(s); return ["Boost jusqu’à " + hhmm(s.boost) + (e > Math.round(s.temp) ? ", ≈ " + e + " °C" : ""), "on"]; }
   if (s.mode === "confort") return ["Confort forcé", "on"];
   if (s.mode === "eco") return ["Eco forcé", ""];
+  if (s.mode === "auto" && s.setpoint == null && pres && pres.profile === "vacances" && pres.until)
+    return ["Hors-gel, relance " + dayShort(pres.until), "win"];
   if (s.mode === "horsgel" || s.setpoint == null) return ["Chauffage coupé", "win"];
   if (s.heating) return ["Chauffe pour " + s.setpoint + " °C" + etaText(s), "on"];
   return ["Consigne tenue", ""];
@@ -184,14 +213,23 @@ function render(note) {
       (full ? '<div class="ctrls">' +
         '<div class="rb' + (auto ? '' : ' dis') + '" data-room="' + r.id + '" data-act="minus">−</div>' +
         '<div class="boost' + (s.boost ? ' on' : '') + (s.window ? ' dis' : '') + '" data-room="' + r.id + '" data-act="boost">' + (s.boost ? "Arrêter le boost" : "Boost 30 min") + '</div>' +
-        '<div class="rb' + (auto ? '' : ' dis') + '" data-room="' + r.id + '" data-act="plus">+</div></div>' : '') +
+        '<div class="rb' + (auto ? '' : ' dis') + '" data-room="' + r.id + '" data-act="plus">+</div></div>' + winRow(s) : '') +
       '</div>';
   }
   el("rooms").innerHTML = h;
 
+  var mh = "";
+  if (full && pres) {
+    var cur = pres.source === "manuel" ? (pres.profile === "maison" ? "home" : pres.profile === "absent" ? "away" : "") : "planning";
+    var MODES = [["home", "Je suis là"], ["away", "Je pars"], ["planning", "Auto"]];
+    for (var mi = 0; mi < MODES.length; mi++) mh += '<div class="md' + (cur === MODES[mi][0] ? ' act' : '') + '" data-mode="' + MODES[mi][0] + '">' + MODES[mi][1] + '</div>';
+  }
+  el("modes").innerHTML = mh;
+
   var sub = "";
   if (full && pres) {
     sub = "<b>" + (PROFILES[pres.profile] || pres.profile) + "</b>";
+    if (pres.profile === "vacances" && pres.returnAt) sub += " · retour " + dayShort(pres.returnAt);
     if (pres.autoPresence && pres.people) {
       var here = []; for (var p in pres.people) { var v2 = pres.people[p]; if (v2 && (v2.home || v2.leaving)) here.push(p === "jade" ? "Jade" : "Nathan"); }
       sub += " · " + (here.length === 2 ? "Nathan et Jade sont là" : here.length === 1 ? here[0] + " est là" : "personne à l’appart");
@@ -209,12 +247,22 @@ el("rooms").onclick = function (e) {
   if (!b || / dis/.test(b.className)) return;
   var id = b.getAttribute("data-room"), act = b.getAttribute("data-act"), s = rooms[id]; if (!s) return;
   if (act === "boost") { call("POST", "/rooms/" + id, { boost: !s.boost }, function () { load(); }); return; }
+  if (act === "winpick" || act === "wincancel") { winPick[id] = act === "winpick"; render(); return; }
+  if (act === "win") { winPick[id] = false; call("POST", "/rooms/" + id, { window: Number(b.getAttribute("data-min")) }, function () { load(); }); return; }
+  if (act === "winclose") { call("POST", "/rooms/" + id, { window: false }, function () { load(); }); return; }
   var base = pending[id] != null ? pending[id] : (typeof s.setpoint === "number" ? s.setpoint : 19);
   pending[id] = Math.max(15, Math.min(25, base + (act === "plus" ? 1 : -1))); render();
   clearTimeout(spTimer[id]);
   spTimer[id] = setTimeout(function () {
     call("POST", "/rooms/" + id, { setpoint: pending[id] }, function () { delete pending[id]; load(); });
   }, 900);
+};
+
+el("modes").onclick = function (e) {
+  try { parent.postMessage("cadre-stay", "*"); } catch (x) {}
+  var m = e.target.getAttribute && e.target.getAttribute("data-mode"); if (!m) return;
+  if (pres && pres.profile === "vacances" && pres.source === "manuel" && m !== "planning") return;   /* en vacances : seul « Auto » les arrête */
+  call("POST", "/presence", { action: m }, function () { load(); });
 };
 
 /* ---------- code d'accès (stocké sur ce cadre uniquement) ---------- */
