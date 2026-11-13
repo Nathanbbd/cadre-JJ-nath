@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trajets</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192; --faint2:#bdb6a6;
+    --line:#e8e3d7; --yellow:#f2b600; --accent:#b7791f; --alert:#c23b2b; --alertbg:rgba(194,59,43,0.12);
+    --walkbg:#ece7db; --idle:#cfc8b8;
+  }
+  :root[data-theme="dark"] {
+    --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a; --faint2:#6f685c;
+    --line:#332f27; --yellow:#f2b600; --accent:#f2b600; --alert:#e8755f; --alertbg:rgba(232,117,95,0.15);
+    --walkbg:#2a2721; --idle:#4a453b;
+  }
+  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
+  body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); -webkit-user-select: none; user-select: none; }
+  #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; background: var(--bg);
+           -webkit-transform-origin: 0 0; transform-origin: 0 0; }
+
+  #head { padding: 34px 54px 0; display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline; }
+  #title { font-size: 46px; font-weight: 700; margin: 0; line-height: 1; }
+  #hsub { font-size: 21px; color: var(--muted); margin-left: 16px; }
+  #clock { margin-left: auto; font-size: 30px; font-weight: 700; color: var(--accent); }
+
+  #trips { position: absolute; left: 54px; right: 54px; top: 112px; bottom: 44px;
+           display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
+  .trip { -webkit-flex: 1; flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 22px;
+          display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center;
+          padding: 0 30px; margin-bottom: 20px; position: relative; }
+  .trip:last-child { margin-bottom: 0; }
+
+  /* colonne qui/destination */
+  .who { width: 310px; -webkit-flex: none; flex: none; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+  .wic { width: 56px; height: 56px; border-radius: 16px; background: var(--walkbg); -webkit-flex: none; flex: none;
+         display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; margin-right: 16px; }
+  .wic svg { width: 30px; height: 30px; }
+  .wic .ic { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .wn { font-size: 29px; font-weight: 700; line-height: 1.05; }
+  .wd { font-size: 19px; color: var(--muted); margin-top: 3px; }
+
+  /* colonne milieu : barre proportionnelle + méta */
+  .mid { -webkit-flex: 1; flex: 1; min-width: 0; padding: 0 26px; }
+  .bar { display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; height: 62px; }
+  .bseg { display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column;
+          -webkit-align-items: center; align-items: center; min-width: 0; padding: 0 3px; }
+  .blab { font-size: 16px; color: var(--muted); font-weight: 600; margin-bottom: 8px; white-space: nowrap; line-height: 1;
+          display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; }
+  .blab svg { width: 17px; height: 17px; margin-right: 4px; -webkit-flex: none; flex: none; }
+  .blab .ic { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .mbadge { display: -webkit-inline-flex; display: inline-flex; -webkit-align-items: center; align-items: center;
+            -webkit-justify-content: center; justify-content: center; width: 29px; height: 29px; border-radius: 8px;
+            font-weight: 800; font-size: 18px; -webkit-flex: none; flex: none; }
+  .bfill { width: 100%; height: 18px; border-radius: 9px; }
+  .bfill.walk { background: var(--idle); }
+  .warn { margin-left: 5px; -webkit-flex: none; flex: none; display: -webkit-inline-flex; display: inline-flex; }
+  .warn svg { width: 19px; height: 19px; }
+  .warn .ic { fill: none; stroke: var(--alert); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .meta { font-size: 18px; color: var(--muted); margin-top: 15px; }
+  .meta b { color: var(--ink); font-weight: 600; }
+  .meta .mal { color: var(--alert); font-weight: 600; }
+
+  /* colonne droite : arrivée */
+  .arr { width: 220px; -webkit-flex: none; flex: none; text-align: right; }
+  .al { font-size: 16px; letter-spacing: 1px; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+  .at { font-size: 62px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+  .dp { font-size: 19px; color: var(--muted); margin-top: 5px; }
+  .dp b { color: var(--ink); font-weight: 600; }
+
+  #foot { position: absolute; left: 54px; right: 54px; bottom: 15px; font-size: 14px; color: var(--faint2); }
+  #foot span { float: right; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <h1 id="title">Trajets</h1>
+    <div id="hsub">si vous partez maintenant</div>
+    <div id="clock"></div>
+  </div>
+  <div id="trips"></div>
+  <div id="foot">Données Île-de-France Mobilités (temps réel).<span id="src">Exemple — horaires indicatifs</span></div>
+</div>
+
+<script>
+/* ============================================================
+   Maquette slide "Trajets". Les trajets sont des EXEMPLES.
+   Pour le live : un Worker "transit-appart" interrogera l'API IDFM
+   (clé planquée côté Worker) et remplira ce même tableau TRIPS.
+   ============================================================ */
+
+var ICONS = {
+  person: '<svg viewBox="0 0 24 24"><circle class="ic" cx="12" cy="8" r="4"/><path class="ic" d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg>',
+  school: '<svg viewBox="0 0 24 24"><path class="ic" d="M2.5 9.5 12 5l9.5 4.5L12 14z"/><path class="ic" d="M6.5 11.3V16c0 1.4 2.5 2.7 5.5 2.7s5.5-1.3 5.5-2.7v-4.7"/><path class="ic" d="M21.5 9.5v4.5"/></svg>',
+  work: '<svg viewBox="0 0 24 24"><rect class="ic" x="3" y="7.5" width="18" height="12" rx="2"/><path class="ic" d="M8.5 7.5V6a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v1.5"/><path class="ic" d="M3 12.5h18"/></svg>'
+};
+
+/* Couleurs officielles des lignes */
+var LINE = {
+  "3":  { bg: "#6E6E00", fg: "#fff" },
+  "6":  { bg: "#6ECA97", fg: "#1b1a16" },
+  "7":  { bg: "#FA9ABA", fg: "#1b1a16" },
+  "10": { bg: "#E3B32A", fg: "#1b1a16" },
+  "14": { bg: "#62259D", fg: "#fff" },
+  "13": { bg: "#89C6E8", fg: "#1b1a16" }
+};
+
+/* Worker qui calcule les vrais trajets (clé PRIM planquée côté serveur) */
+var WORKER_URL = "https://transit-appart.boisbourdinnathande.workers.dev";
+
+/* Exemple affiché tant que le Worker n'a pas répondu */
+var DEFAULT_TRIPS = [
+  { icon: "person", name: "Jade", dest: "Travail · Transavia",
+    arrive: "08:58", depart: "07:51", dur: 52, changes: 1, next: "prochain M3 dans 2 min",
+    segs: [ {walk:7}, {m:"3",min:10}, {m:"14",min:20}, {walk:15} ], alert: null },
+  { icon: "school", name: "Nathan", dest: "École · INSEEC",
+    arrive: "08:46", depart: "08:03", dur: 43, changes: 1, next: "prochain M3 dans 2 min",
+    segs: [ {walk:7}, {m:"3",min:15}, {m:"6",min:16,alert:true}, {walk:5} ], alert: "M6 perturbée" },
+  { icon: "work", name: "Nathan", dest: "Travail · AB InBev",
+    arrive: "08:40", depart: "07:59", dur: 41, changes: 1, next: "prochain M3 dans 2 min",
+    segs: [ {walk:7}, {m:"3",min:16}, {m:"7",min:14}, {walk:4} ], alert: null }
+];
+var TRIPS = DEFAULT_TRIPS.slice();
+var lastLoad = null, OFFLINE_T = 0;
+
+function el(id) { return document.getElementById(id); }
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
+/* cache hors-ligne */
+function cput(k, s) { try { localStorage.setItem("cad_" + k, '{"t":' + Date.now() + ',"s":' + JSON.stringify(s) + '}'); } catch (e) {} }
+function cget(k) { try { var r = localStorage.getItem("cad_" + k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+function jget(key, url, ok) {
+  var x = new XMLHttpRequest();
+  try { x.open("GET", url); } catch (e) {}
+  x.timeout = 12000;
+  function fb() { var c = cget(key); if (c) { try { ok(JSON.parse(c.s), true, c.t); } catch (e) {} } }
+  x.onload = function () { if (x.status === 200) { try { var d = JSON.parse(x.responseText); cput(key, x.responseText); ok(d, false, Date.now()); return; } catch (e) {} } fb(); };
+  x.onerror = fb; x.ontimeout = fb;
+  try { x.send(); } catch (e) { fb(); }
+}
+/* texte lisible (clair/foncé) selon la couleur de fond de la pastille */
+function fgFor(hex) {
+  var h = (hex || "").replace("#", "");
+  if (h.length === 3) h = h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  var r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+  if (isNaN(r)) return "#fff";
+  var lum = (0.299*r + 0.587*g + 0.114*b);
+  return lum > 150 ? "#1b1a16" : "#ffffff";
+}
+function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
+function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
+
+var WALKSVG = '<svg viewBox="0 0 24 24"><circle class="ic" cx="13.2" cy="4.6" r="1.6"/><path class="ic" d="M13.2 8l-2.3 4.2 2.7 1.8 1 4.8"/><path class="ic" d="M15.7 10.3 13.2 8 10.2 9.6"/><path class="ic" d="M13.6 14 10 15.8l-1.7 3.9"/></svg>';
+var WARNSVG = '<span class="warn"><svg viewBox="0 0 24 24"><path class="ic" d="M12 3 2.5 20h19z"/><path class="ic" d="M12 10v4.5M12 17.2v.2"/></svg></span>';
+
+function barHtml(segs) {
+  var h = "";
+  for (var i = 0; i < segs.length; i++) {
+    var s = segs[i];
+    if (s.walk != null) {
+      h += '<div class="bseg" style="-webkit-box-flex:' + s.walk + ';-webkit-flex:' + s.walk + ' 1 0;flex:' + s.walk + ' 1 0">' +
+        '<div class="blab">' + WALKSVG + s.walk + ' min</div><div class="bfill walk"></div></div>';
+    } else if (s.m != null) {
+      var bg = s.color || (LINE[s.m] ? LINE[s.m].bg : "#888888"), fg = fgFor(bg);
+      h += '<div class="bseg" style="-webkit-box-flex:' + s.min + ';-webkit-flex:' + s.min + ' 1 0;flex:' + s.min + ' 1 0">' +
+        '<div class="blab"><span class="mbadge" style="background:' + bg + ';color:' + fg + '">' + s.m + '</span>' + (s.alert ? WARNSVG : '') + '</div>' +
+        '<div class="bfill" style="background:' + bg + '"></div></div>';
+    }
+  }
+  return h;
+}
+
+function render() {
+  applyTheme();
+  var h = "";
+  for (var i = 0; i < TRIPS.length; i++) {
+    var t = TRIPS[i];
+    h += '<div class="trip">' +
+      '<div class="who"><div class="wic">' + (ICONS[t.icon] || ICONS.person) + '</div>' +
+        '<div><div class="wn">' + t.name + '</div><div class="wd">' + t.dest + '</div></div></div>' +
+      '<div class="mid"><div class="bar">' + barHtml(t.segs) + '</div>' +
+        '<div class="meta"><b>' + t.dur + ' min</b> · ' + (t.changes === 0 ? "direct" : t.changes + " correspondance" + (t.changes > 1 ? "s" : "")) + ' · ' + t.next +
+          (t.alert ? ' · <span class="mal">&#9888; ' + t.alert + '</span>' : '') + '</div>' +
+      '</div>' +
+      '<div class="arr"><div class="al">Arrivée</div><div class="at">' + t.arrive + '</div><div class="dp">départ <b>' + t.depart + '</b></div></div>' +
+      '</div>';
+  }
+  el("trips").innerHTML = h;
+  var now = new Date();
+  el("clock").innerHTML = pad(now.getHours()) + ":" + pad(now.getMinutes());
+  var se = el("src");
+  if (se) {
+    if (OFFLINE_T) se.innerHTML = "⚠ Hors ligne · maj " + hhmm(new Date(OFFLINE_T));
+    else if (lastLoad) se.innerHTML = "Maj " + hhmm(lastLoad);
+    else se.innerHTML = "Exemple — horaires indicatifs";
+  }
+}
+
+function fit() {
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800), st = el("stage").style;
+  st.webkitTransform = st.transform = "scale(" + s + ")";
+  st.left = ((window.innerWidth - 1280 * s) / 2) + "px";
+  st.top = ((window.innerHeight - 800 * s) / 2) + "px";
+}
+function load() {
+  jget("transit", WORKER_URL + "?t=" + Date.now(), function (d, stale, t) {
+    if (d && d.trips && d.trips.length) { TRIPS = d.trips; lastLoad = new Date(); OFFLINE_T = stale ? t : 0; render(); }
+  });
+}
+window.onresize = fit; fit(); applyTheme();
+render();
+load();
+setInterval(render, 60000);
+setInterval(load, 60000);
+</script>
+</body>
+</html>

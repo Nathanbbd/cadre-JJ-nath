@@ -72,6 +72,9 @@
     <div class="navBtn" data-i="4" title="Photos">
       <svg viewBox="0 0 24 24"><rect class="ic" x="3.5" y="5.5" width="17" height="13" rx="2.5"/><circle class="ic" cx="9" cy="10.5" r="1.8"/><path class="ic" d="M4.5 17l4.5-4.2 3.2 3 3-2.6 4.3 3.8"/></svg>
     </div>
+    <div class="navBtn" data-i="5" title="Trajets">
+      <svg viewBox="0 0 24 24"><rect class="ic" x="6" y="3.5" width="12" height="13.5" rx="3.5"/><path class="ic" d="M6 10.5h12"/><path class="ic" d="M9 7h6"/><path class="ic" d="M8.5 17 6.5 20.5M15.5 17l2 3.5"/></svg>
+    </div>
   </div>
 
   <div id="stageWrap">
@@ -80,13 +83,20 @@
     <iframe class="slide" id="s2" src="slide-chauffage.html"></iframe>
     <iframe class="slide" id="s3" src="slide-courses.html"></iframe>
     <iframe class="slide" id="s4" src="slide-photos.html"></iframe>
+    <iframe class="slide" id="s5" src="slide-trajets.html"></iframe>
     <div id="prog"><div id="progFill"></div></div>
   </div>
 
 <script>
 /* ---------- réglages ---------- */
 var ROTATE_MS = 30000;
-var N = 5;
+var N = 6;
+var TRAJETS_I = 5;   /* slide "Trajets" : dans la rotation seulement en semaine 6h-10h, sinon onglet */
+function inRotation(i) {
+  if (i !== TRAJETS_I) return true;
+  var d = new Date(), day = d.getDay(), h = d.getHours();
+  return (day >= 1 && day <= 5 && h >= 6 && h < 10);
+}
 
 /* Thème : clair par défaut (crème/jaune). ?theme=dark pour tester le sombre. */
 function currentTheme() {
@@ -112,7 +122,11 @@ function show(i) {
   restart();
 }
 
-function next() { show((cur + 1) % N); }
+function next() {
+  var i = cur;
+  for (var k = 0; k < N; k++) { i = (i + 1) % N; if (inRotation(i)) break; }
+  show(i);
+}
 
 function restart() {
   start = Date.now();
