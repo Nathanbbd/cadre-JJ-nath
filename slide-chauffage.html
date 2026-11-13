@@ -195,11 +195,13 @@ function arc(a1, a2) { if (a2 - a1 < 0.5) a2 = a1 + 0.5; var p = pt(a1), q = pt(
 function statusOf(s) {
   if (!full) return ["", ""];
   if (s.window) return ["Fenêtre ouverte, coupé jusqu’à " + hhmm(s.window), "win"];
+  if (s.preheat && s.mode === "auto" && !s.boost)
+    return [s.preheat > Date.now() ? "Relance : " + s.setpoint + " °C pour " + hhmm(s.preheat) : "Arrivée prévue " + hhmm(s.preheat) + " : " + s.setpoint + " °C", s.heating ? "on" : ""];
   if (s.boost) { var e = boostEnd(s); return ["Boost jusqu’à " + hhmm(s.boost) + (e > Math.round(s.temp) ? ", ≈ " + e + " °C" : ""), "on"]; }
   if (s.mode === "confort") return ["Confort forcé", "on"];
   if (s.mode === "eco") return ["Eco forcé", ""];
   if (s.mode === "auto" && s.setpoint == null && pres && pres.profile === "vacances" && pres.until)
-    return ["Hors-gel, relance " + dayShort(pres.until), "win"];
+    return [pres.returnAt && pres.until >= pres.returnAt ? "Hors-gel, relance auto avant " + dayShort(pres.returnAt) : "Hors-gel, relance " + dayShort(pres.until), "win"];
   if (s.mode === "horsgel" || s.setpoint == null) return ["Chauffage coupé", "win"];
   if (s.heating) return ["Chauffe pour " + s.setpoint + " °C" + etaText(s), "on"];
   return ["Consigne tenue", ""];
