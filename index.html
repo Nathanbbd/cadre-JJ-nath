@@ -52,6 +52,17 @@
   /* Liseré de progression en haut de la zone slides */
   #prog { position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 11; }
   #progFill { height: 100%; width: 0; background: var(--prog); }
+
+  /* Badge "en pause" (quand on touche une slide) */
+  #pauseBadge {
+    position: absolute; left: 50%; bottom: 22px; -webkit-transform: translateX(-50%); transform: translateX(-50%);
+    z-index: 20; display: none; -webkit-align-items: center; align-items: center;
+    background: var(--navactive); color: var(--navactiveic); font-family: "Roboto", Arial, sans-serif;
+    font-size: 19px; font-weight: 600; padding: 11px 20px; border-radius: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); cursor: pointer;
+  }
+  #pauseBadge.on { display: -webkit-flex; display: flex; }
+  #pauseBadge svg { width: 20px; height: 20px; margin-right: 10px; }
+  #pauseBadge .ic { fill: var(--navactiveic); }
 </style>
 </head>
 <body>
@@ -85,6 +96,7 @@
     <iframe class="slide" id="s4" src="slide-photos.html"></iframe>
     <iframe class="slide" id="s5" src="slide-trajets.html"></iframe>
     <div id="prog"><div id="progFill"></div></div>
+    <div id="pauseBadge"><svg viewBox="0 0 24 24"><rect class="ic" x="6" y="5" width="4" height="14" rx="1"/><rect class="ic" x="14" y="5" width="4" height="14" rx="1"/></svg>En pause · touchez pour reprendre</div>
   </div>
 
 <script>
@@ -106,11 +118,13 @@ function currentTheme() {
 function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
 applyTheme();
 
-var cur = -1, timer = null, start = 0;
+var PAUSE_MS = 60000;   /* reprise auto 60 s après le dernier toucher */
+var cur = -1, timer = null, start = 0, paused = false, pauseTimer = null;
 var slides = [];
 for (var si = 0; si < N; si++) slides.push(document.getElementById("s" + si));
 var btns = document.getElementsByClassName("navBtn");
 var progFill = document.getElementById("progFill");
+var pauseBadge = document.getElementById("pauseBadge");
 
 function show(i) {
   if (i === cur) { restart(); return; }
@@ -131,21 +145,48 @@ function next() {
 function restart() {
   start = Date.now();
   if (timer) clearTimeout(timer);
-  timer = setTimeout(next, ROTATE_MS);
+  if (!paused) timer = setTimeout(next, ROTATE_MS);
+}
+
+/* ---------- pause au toucher ---------- */
+function pauseRotation() {
+  paused = true;
+  if (timer) { clearTimeout(timer); timer = null; }
+  if (pauseBadge) pauseBadge.className = "on";
+  if (pauseTimer) clearTimeout(pauseTimer);
+  pauseTimer = setTimeout(resumeRotation, PAUSE_MS);
+}
+function resumeRotation() {
+  paused = false;
+  if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
+  if (pauseBadge) pauseBadge.className = "";
+  restart();
+}
+function attachTouch(fr) {
+  try {
+    var d = fr.contentDocument || (fr.contentWindow && fr.contentWindow.document);
+    if (!d) return;
+    d.addEventListener("touchstart", pauseRotation, true);
+    d.addEventListener("mousedown", pauseRotation, true);
+  } catch (e) {}
 }
 
 function loop() {
-  var f = Math.min(1, (Date.now() - start) / ROTATE_MS);
+  var f = paused ? 0 : Math.min(1, (Date.now() - start) / ROTATE_MS);
   progFill.style.width = (f * 100) + "%";
   window.requestAnimationFrame ? requestAnimationFrame(loop) : setTimeout(loop, 100);
 }
 
 for (var k = 0; k < N; k++) {
-  (function (idx) { btns[idx].onclick = function () { show(idx); }; })(k);
+  (function (idx) { btns[idx].onclick = function () { show(idx); pauseRotation(); }; })(k);
 }
+for (var t = 0; t < N; t++) {
+  (function (fr) { if (fr) { fr.addEventListener("load", function () { attachTouch(fr); }); attachTouch(fr); } })(slides[t]);
+}
+if (pauseBadge) pauseBadge.onclick = resumeRotation;
 
-/* Une slide peut demander à rester affichée (ex. réglage du chauffage) : on relance le compte à rebours */
-window.addEventListener("message", function (e) { if (e.data === "cadre-stay") restart(); });
+/* Une slide peut demander à rester affichée (ex. réglage du chauffage) : on met en pause */
+window.addEventListener("message", function (e) { if (e.data === "cadre-stay") pauseRotation(); });
 
 show(0);
 loop();
