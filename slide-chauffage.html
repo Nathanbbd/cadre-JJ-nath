@@ -37,13 +37,17 @@
           -webkit-align-items: center; align-items: center; padding: 22px 20px 20px; }
   .room + .room { margin-left: 28px; }
   .rName { font-size: 30px; font-weight: 600; }
-  .dial { position: relative; width: 330px; height: 280px; margin-top: 18px; }
+  .dial { position: relative; width: 300px; height: 252px; margin-top: 14px; }
   .dial svg { position: absolute; left: 0; top: 0; }
-  .center { position: absolute; left: 0; right: 0; top: 86px; text-align: center; }
-  .now { font-size: 104px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  .center { position: absolute; left: 0; right: 0; top: 76px; text-align: center; }
+  .now { font-size: 92px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
   .now sup { font-size: 40px; font-weight: 600; vertical-align: top; position: relative; top: 8px; }
   .sp { font-size: 22px; color: var(--muted); margin-top: 6px; }
   .sp b { color: var(--ink); }
+  .prof { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+          font-size: 18px; color: var(--muted); margin-top: 8px; min-height: 40px; }
+  .pb { font-size: 18px; font-weight: 600; color: var(--accent); padding: 6px 14px; margin-left: 12px; border-radius: 10px;
+        border: 2px solid var(--line); cursor: pointer; white-space: nowrap; }
   .status { font-size: 24px; font-weight: 600; margin-top: 4px; min-height: 30px; text-align: center; color: var(--muted); }
   .status.on { color: var(--heat); } .status.win { color: var(--cool); }
   .ctrls { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-top: auto; }
@@ -172,6 +176,15 @@ function winRow(s) {
   return h + '<div class="wb x" data-room="' + s.id + '" data-act="wincancel">×</div></div>';
 }
 
+/* ---------- consigne manuelle ou mode forcé : « Revenir au profil », comme dans l'app ---------- */
+function profLine(s) {
+  if (!full) return '';
+  var back = '<div class="pb" data-room="' + s.id + '" data-act="back">Revenir au profil</div>';
+  if (s.mode && s.mode !== "auto") return '<div class="prof"><span>Mode forcé</span>' + back + '</div>';
+  if (s.manual) return '<div class="prof"><span>Consigne manuelle' + (s.manualUntil ? ' jusqu’à ' + hhmm(s.manualUntil) : '') + '</span>' + back + '</div>';
+  return '<div class="prof"></div>';
+}
+
 /* ---------- affichage ---------- */
 var C = 165, R = 140;
 function ang(v) { return 135 + (Math.max(14, Math.min(26, v)) - 14) / 12 * 270; }
@@ -199,7 +212,7 @@ function render(note) {
     var r = ROOMS[i], s = rooms[r.id] || { id: r.id }, temp = s.temp, sp = pending[r.id] != null ? pending[r.id] : s.setpoint;
     var col = s.heating || s.boost ? "var(--heat)" : (s.window || (full && sp == null) ? "var(--cool)" : "var(--idle)");
     var st = statusOf(s), auto = full && s.mode === "auto" && !s.window;
-    var svg = '<svg width="330" height="300" viewBox="0 0 330 300">';
+    var svg = '<svg width="300" height="273" viewBox="0 0 330 300">';
     for (var v = 14; v <= 26; v++) { var a = ang(v) * Math.PI / 180, r1 = R + 16, r2 = R + (v % 2 ? 20 : 24);
       svg += '<line x1="' + (C + r1 * Math.cos(a)) + '" y1="' + (150 + r1 * Math.sin(a)) + '" x2="' + (C + r2 * Math.cos(a)) + '" y2="' + (150 + r2 * Math.sin(a)) + '" stroke="var(--line)" stroke-width="2.5" stroke-linecap="round"/>'; }
     svg += '<path d="' + arc(135, 405) + '" fill="none" stroke="var(--line)" stroke-width="18" stroke-linecap="round"/>';
@@ -209,7 +222,7 @@ function render(note) {
     h += '<div class="room"><div class="rName">' + r.name + '</div><div class="dial">' + svg +
       '<div class="center"><div class="now">' + (temp == null ? "–" : Math.round(temp) + "<sup>°</sup>") + '</div>' +
       (full ? '<div class="sp">Consigne <b>' + (typeof sp === "number" ? sp + " °C" : "Hors-gel") + '</b></div>' : '') + '</div></div>' +
-      '<div class="status ' + st[1] + '">' + st[0] + '</div>' +
+      '<div class="status ' + st[1] + '">' + st[0] + '</div>' + profLine(s) +
       (full ? '<div class="ctrls">' +
         '<div class="rb' + (auto ? '' : ' dis') + '" data-room="' + r.id + '" data-act="minus">−</div>' +
         '<div class="boost' + (s.boost ? ' on' : '') + (s.window ? ' dis' : '') + '" data-room="' + r.id + '" data-act="boost">' + (s.boost ? "Arrêter le boost" : "Boost 30 min") + '</div>' +
@@ -249,6 +262,7 @@ el("rooms").onclick = function (e) {
   if (act === "boost") { call("POST", "/rooms/" + id, { boost: !s.boost }, function () { load(); }); return; }
   if (act === "winpick" || act === "wincancel") { winPick[id] = act === "winpick"; render(); return; }
   if (act === "win") { winPick[id] = false; call("POST", "/rooms/" + id, { window: Number(b.getAttribute("data-min")) }, function () { load(); }); return; }
+  if (act === "back") { delete pending[id]; call("POST", "/rooms/" + id, { mode: "auto" }, function () { load(); }); return; }
   if (act === "winclose") { call("POST", "/rooms/" + id, { window: false }, function () { load(); }); return; }
   var base = pending[id] != null ? pending[id] : (typeof s.setpoint === "number" ? s.setpoint : 19);
   pending[id] = Math.max(15, Math.min(25, base + (act === "plus" ? 1 : -1))); render();
