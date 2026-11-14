@@ -55,14 +55,15 @@
 
   /* Badge "en pause" (quand on touche une slide) */
   #pauseBadge {
-    position: absolute; left: 50%; bottom: 22px; -webkit-transform: translateX(-50%); transform: translateX(-50%);
-    z-index: 20; display: none; -webkit-align-items: center; align-items: center;
+    position: absolute; left: 84px; top: 50%; -webkit-transform: translateY(-50%); transform: translateY(-50%);
+    z-index: 20; display: none;
     background: var(--navactive); color: var(--navactiveic); font-family: "Roboto", Arial, sans-serif;
-    font-size: 19px; font-weight: 600; padding: 11px 20px; border-radius: 24px; box-shadow: 0 4px 16px rgba(0,0,0,0.22); cursor: pointer;
+    font-size: 14px; font-weight: 600; letter-spacing: 1px; padding: 14px 7px; border-radius: 14px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.22); cursor: pointer;
+    -webkit-writing-mode: vertical-rl; writing-mode: vertical-rl; text-orientation: mixed;
   }
-  #pauseBadge.on { display: -webkit-flex; display: flex; }
-  #pauseBadge svg { width: 20px; height: 20px; margin-right: 10px; }
-  #pauseBadge .ic { fill: var(--navactiveic); }
+  #pauseBadge.on { display: block; }
+  #pauseBadge svg { display: none; }
 
   /* écran de veille (nuit) */
   #veille { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: #000; z-index: 50;
