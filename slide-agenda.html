@@ -8,11 +8,11 @@
 <style>
   :root {
     --bg:#f4f1ea; --card:#fbf8f1; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192; --line:#e8e3d7;
-    --evbg:#efe9dc; --nico:#5a8f3f; --flo:#8a4fbf; --ens:#3b6fb5; --today:#5a8f3f;
+    --evbg:#efe9dc; --nathan:#5a8f3f; --gigi:#8a4fbf; --nous:#3b6fb5; --today:#5a8f3f;
   }
   :root[data-theme="dark"] {
     --bg:#1b1a16; --card:#232019; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a; --line:#332f27;
-    --evbg:#2d2820; --nico:#7cc45f; --flo:#b483e0; --ens:#6b9be8; --today:#7cc45f;
+    --evbg:#2d2820; --nathan:#7cc45f; --gigi:#b483e0; --nous:#6b9be8; --today:#7cc45f;
   }
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
   body { font-family: "Barlow", "Roboto", Arial, sans-serif; color: var(--ink); }
@@ -50,9 +50,9 @@
   <div id="head">
     <div id="title">Agenda · 2 prochaines semaines</div>
     <div id="legend">
-      <div class="leg"><span class="d" style="background:var(--nico)"></span>Nico</div>
-      <div class="leg"><span class="d" style="background:var(--flo)"></span>Flo</div>
-      <div class="leg"><span class="d" style="background:var(--ens)"></span>Ensemble</div>
+      <div class="leg"><span class="d" style="background:var(--nathan)"></span>Nathan</div>
+      <div class="leg"><span class="d" style="background:var(--gigi)"></span>Gigi</div>
+      <div class="leg"><span class="d" style="background:var(--nous)"></span>Nous deux</div>
     </div>
   </div>
   <div class="grid" id="row0"></div>
@@ -60,24 +60,48 @@
 </div>
 
 <script>
-/* Événements (démo). who : nico | flo | ens. off = nb de jours depuis aujourd'hui.
-   Plus tard : rempli depuis Google Agenda (mêmes champs). */
-var EVENTS = [
-  { off: 0,  time: "12 h 30", title: "Restaurant",          who: "ens" },
-  { off: 3,  time: "09 h 00", title: "Inventaire Liberté",  who: "flo" },
-  { off: 5,  time: "13 h 30", title: "Visio Touraine",      who: "flo" },
-  { off: 6,  time: "20 h 00", title: "Concert BigFlo et Oli", who: "ens" },
-  { off: 11, time: "18 h 30", title: "Ongles",              who: "flo" },
-  { off: 12, time: "Journée", title: "Thanksgiving",        who: "nico" },
-  { off: 13, time: "20 h 00", title: "Concert Bilal",       who: "flo" }
-];
-var WHO_COLOR = { nico: "var(--nico)", flo: "var(--flo)", ens: "var(--ens)" };
+/* Les événements viennent du Worker "agenda-appart" (3 agendas Google).
+   who : nathan | gigi | nous. Format par événement : {date:"YYYY-MM-DD", time:"HH:MM", allday, min, title, who} */
+var AGENDA_URL = "https://agenda-appart.boisbourdinnathande.workers.dev";
+var WHO_COLOR = { nathan: "var(--nathan)", gigi: "var(--gigi)", nous: "var(--nous)" };
 var WD = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
 var MO = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
 
 function el(id) { return document.getElementById(id); }
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function ds(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
 function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
 function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
+function frTime(e) { if (e.allday || !e.time) return "Journée"; var p = e.time.split(":"); return p[0] + " h " + p[1]; }
+
+/* démo affichée tant que le Worker n'a pas répondu */
+function demoEvents() {
+  var t = new Date(); t.setHours(0, 0, 0, 0);
+  function dp(o) { return ds(new Date(t.getTime() + o * 86400000)); }
+  return [
+    { date: dp(0),  time: "12:30", allday: false, min: 750, title: "Restaurant",          who: "nous" },
+    { date: dp(3),  time: "09:00", allday: false, min: 540, title: "Inventaire Liberté",  who: "gigi" },
+    { date: dp(5),  time: "13:30", allday: false, min: 810, title: "Visio Touraine",      who: "gigi" },
+    { date: dp(6),  time: "20:00", allday: false, min: 1200, title: "Concert BigFlo et Oli", who: "nous" },
+    { date: dp(11), time: "18:30", allday: false, min: 1110, title: "Ongles",             who: "gigi" },
+    { date: dp(12), time: "",      allday: true,  min: -1,  title: "Thanksgiving",         who: "nathan" },
+    { date: dp(13), time: "20:00", allday: false, min: 1200, title: "Concert Bilal",       who: "gigi" }
+  ];
+}
+var EV = demoEvents();
+
+/* cache hors-ligne */
+function cput(k, s) { try { localStorage.setItem("cad_" + k, '{"t":' + Date.now() + ',"s":' + JSON.stringify(s) + '}'); } catch (e) {} }
+function cget(k) { try { var r = localStorage.getItem("cad_" + k); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+function load() {
+  var x = new XMLHttpRequest();
+  try { x.open("GET", AGENDA_URL + "?t=" + Date.now()); } catch (e) {}
+  x.timeout = 12000;
+  function use(txt) { try { var j = JSON.parse(txt); if (j && j.events) { EV = j.events; render(); } } catch (e) {} }
+  x.onload = function () { if (x.status === 200) { cput("agenda", x.responseText); use(x.responseText); } else { var c = cget("agenda"); if (c) use(c.s); } };
+  x.onerror = x.ontimeout = function () { var c = cget("agenda"); if (c) use(c.s); };
+  try { x.send(); } catch (e) {}
+}
 
 function dayLabel(d, off) {
   if (off === 0) return { wd: "auj.", mo: MO[d.getMonth()] };
@@ -86,7 +110,7 @@ function dayLabel(d, off) {
 }
 function evHtml(e) {
   return '<div class="ev"><div class="bar" style="background:' + (WHO_COLOR[e.who] || "var(--muted)") + '"></div>' +
-    (e.time ? '<div class="et">' + e.time + '</div>' : '') + '<div class="ett">' + e.title + '</div></div>';
+    '<div class="et">' + frTime(e) + '</div><div class="ett">' + e.title + '</div></div>';
 }
 
 function render() {
@@ -95,11 +119,13 @@ function render() {
   for (var r = 0; r < 2; r++) {
     var h = "";
     for (var c = 0; c < 7; c++) {
-      var off = r * 7 + c, d = new Date(today.getTime() + off * 86400000);
+      var off = r * 7 + c, d = new Date(today.getTime() + off * 86400000), dstr = ds(d);
       var lab = dayLabel(d, off), isToday = (off === 0);
-      var evs = ""; var any = false;
-      for (var i = 0; i < EVENTS.length; i++) { if (EVENTS[i].off === off) { evs += evHtml(EVENTS[i]); any = true; } }
-      if (!any) evs = '<div class="empty">—</div>';
+      var list = [];
+      for (var i = 0; i < EV.length; i++) if (EV[i].date === dstr) list.push(EV[i]);
+      list.sort(function (a, b) { return (a.min || 0) - (b.min || 0); });
+      var evs = ""; for (var k = 0; k < list.length; k++) evs += evHtml(list[k]);
+      if (!list.length) evs = '<div class="empty">—</div>';
       h += '<div class="day' + (isToday ? " today" : "") + '">' +
         '<div class="dh' + (isToday ? " today" : "") + '"><span class="wd">' + lab.wd + '</span>' +
           '<span class="nn">' + d.getDate() + '</span>' + (lab.mo ? '<span class="mo">' + lab.mo + '</span>' : '') + '</div>' +
@@ -117,7 +143,9 @@ function fit() {
 }
 window.onresize = fit; fit(); applyTheme();
 render();
+load();
 setInterval(render, 60000);
+setInterval(load, 300000);
 </script>
 </body>
 </html>

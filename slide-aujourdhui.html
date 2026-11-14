@@ -9,12 +9,12 @@
   :root {
     --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192;
     --faint2:#bdb6a6; --line:#e8e3d7; --yellow:#f2b600; --yellowsoft:rgba(242,182,0,0.16);
-    --accent:#b7791f; --soon:#d98324;
+    --accent:#b7791f; --soon:#d98324; --nathan:#5a8f3f; --gigi:#8a4fbf; --nous:#3b6fb5;
   }
   :root[data-theme="dark"] {
     --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a;
     --faint2:#6f685c; --line:#332f27; --yellow:#f2b600; --yellowsoft:rgba(242,182,0,0.18);
-    --accent:#f2b600; --soon:#f0a24a;
+    --accent:#f2b600; --soon:#f0a24a; --nathan:#7cc45f; --gigi:#b483e0; --nous:#6b9be8;
   }
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
   body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
@@ -143,8 +143,10 @@
 </div>
 
 <script>
-var AGENDA_URL = "";
+var AGENDA_URL = "https://agenda-appart.boisbourdinnathande.workers.dev";
 var TRANSIT_URL = "https://transit-appart.boisbourdinnathande.workers.dev";
+var WHO_COLOR = { nathan: "var(--nathan)", gigi: "var(--gigi)", nous: "var(--nous)" };
+var WDLONG = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 var LIGHT_URL = "https://tuya-appart.boisbourdinnathande.workers.dev";
 var LAT = 48.8938, LON = 2.2870;
 var REFRESH_MIN = 15;
@@ -263,14 +265,32 @@ function condText(code) {
 
 var WX = null, AG = null, TRJ = null, lastLoad = null;
 
+function frTime(e) { if (e.allday || !e.time) return "journée"; var p = e.time.split(":"); return p[0] + " h " + p[1]; }
+function dstr(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+/* transforme la liste d'événements du Worker en blocs par jour (aujourd'hui, demain, puis jours avec events) */
+function buildDays(events) {
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  var by = {};
+  for (var i = 0; i < events.length; i++) { var e = events[i]; (by[e.date] = by[e.date] || []).push(e); }
+  var days = [], n = 0;
+  for (var off = 0; off < 14 && n < 6; off++) {
+    var d = new Date(today.getTime() + off * 86400000), evs = by[dstr(d)] || [];
+    evs.sort(function (a, b) { return (a.min || 0) - (b.min || 0); });
+    if (off > 1 && !evs.length) continue;
+    var label = off === 0 ? "Aujourd'hui" : off === 1 ? "Demain" : (cap(WDLONG[d.getDay()]) + " " + d.getDate());
+    days.push({ label: label, events: evs.map(function (e) { return { t: frTime(e), title: e.title, who: e.who }; }) });
+    n++;
+  }
+  return { days: days };
+}
 function mockAgenda() {
-  return { days: [
-    { label: "Aujourd'hui", events: [{ t: "en cours", title: "Restaurant" }] },
-    { label: "Demain", events: [] },
-    { label: "Mardi 17", events: [{ t: "09 h 00", title: "Inventaire Liberté" }] },
-    { label: "Jeudi 19", events: [{ t: "13 h 30", title: "Visio Touraine" }] },
-    { label: "Vendredi 20", events: [{ t: "20 h 00", title: "Concert Bigflo & Oli" }] }
-  ] };
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  function dp(o) { return dstr(new Date(today.getTime() + o * 86400000)); }
+  return buildDays([
+    { date: dp(0), time: "12:30", allday: false, min: 750, title: "Restaurant", who: "nous" },
+    { date: dp(6), time: "20:00", allday: false, min: 1200, title: "Concert BigFlo et Oli", who: "nous" }
+  ]);
 }
 
 function renderWeather() {
@@ -304,8 +324,8 @@ function renderAgenda() {
     h += '<div class="agday' + (i === 0 ? " first" : "") + '">' + d.label + '</div>';
     if (d.events && d.events.length) {
       for (var j = 0; j < d.events.length; j++) {
-        var e = d.events[j];
-        h += '<div class="agev"><span class="dot"></span>' + (e.t ? '<span class="t">' + e.t + '</span>' : '') + e.title + '</div>';
+        var e = d.events[j], col = WHO_COLOR[e.who] || "var(--accent)";
+        h += '<div class="agev"><span class="dot" style="background:' + col + '"></span>' + (e.t ? '<span class="t">' + e.t + '</span>' : '') + e.title + '</div>';
       }
     } else h += '<div class="agnone">Rien de prévu</div>';
   }
@@ -405,7 +425,8 @@ function loadJSON(url, cb) {
   xhr.onload = function () { if (xhr.status === 200) { try { cb(JSON.parse(xhr.responseText)); } catch (e) {} } };
   xhr.send();
 }
-function loadAgenda() { if (!AGENDA_URL) { AG = mockAgenda(); render(); return; } loadJSON(AGENDA_URL, function (j) { AG = j; lastLoad = new Date(); render(); }); }
+function onlyNous(events) { var o = []; for (var i = 0; i < events.length; i++) if (events[i].who === "nous") o.push(events[i]); return o; }
+function loadAgenda() { if (!AGENDA_URL) { AG = mockAgenda(); render(); return; } loadJSON(AGENDA_URL + "?t=" + Date.now(), function (j) { if (j && j.events) { AG = buildDays(onlyNous(j.events)); lastLoad = new Date(); render(); } }); }
 function loadTrajets() { if (!TRANSIT_URL) { render(); return; } loadJSON(TRANSIT_URL + "?t=" + Date.now(), function (j) { if (j && j.trips) { TRJ = j; lastLoad = new Date(); render(); } }); }
 function loadAll() { loadWeather(); loadAgenda(); loadTrajets(); }
 
