@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agenda</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f4f1ea; --card:#fbf8f1; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192; --line:#e8e3d7;
+    --evbg:#efe9dc; --nico:#5a8f3f; --flo:#8a4fbf; --ens:#3b6fb5; --today:#5a8f3f;
+  }
+  :root[data-theme="dark"] {
+    --bg:#1b1a16; --card:#232019; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a; --line:#332f27;
+    --evbg:#2d2820; --nico:#7cc45f; --flo:#b483e0; --ens:#6b9be8; --today:#7cc45f;
+  }
+  html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
+  body { font-family: "Barlow", "Roboto", Arial, sans-serif; color: var(--ink); }
+  #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; background: var(--bg);
+           -webkit-transform-origin: 0 0; transform-origin: 0 0; padding: 26px 34px; -webkit-box-sizing: border-box; box-sizing: border-box;
+           display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
+
+  #head { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-bottom: 16px; -webkit-flex: none; flex: none; }
+  #title { font-size: 22px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  #legend { margin-left: auto; display: -webkit-flex; display: flex; }
+  .leg { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-left: 26px; font-size: 20px; color: var(--ink); }
+  .leg .d { width: 13px; height: 13px; border-radius: 7px; margin-right: 9px; }
+
+  .grid { -webkit-flex: 1; flex: 1; display: -webkit-flex; display: flex; min-height: 0; }
+  .grid + .grid { margin-top: 16px; }
+  .day { -webkit-flex: 1; flex: 1; background: var(--card); border-radius: 18px; padding: 16px 14px; margin-right: 14px;
+         display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; min-width: 0; }
+  .day:last-child { margin-right: 0; }
+  .day.today { border: 3px solid var(--today); padding: 13px 11px; }
+  .dh { font-size: 18px; -webkit-flex: none; flex: none; margin-bottom: 12px; }
+  .dh .wd { font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--muted); }
+  .dh.today .wd { color: var(--today); }
+  .dh .nn { font-size: 30px; font-weight: 800; margin-left: 4px; }
+  .dh .mo { font-size: 17px; color: var(--muted); font-weight: 500; margin-left: 3px; }
+
+  .ev { background: var(--evbg); border-radius: 10px; padding: 9px 11px 9px 13px; position: relative; overflow: hidden; margin-bottom: 9px; }
+  .ev .bar { position: absolute; left: 0; top: 0; bottom: 0; width: 6px; border-radius: 3px; }
+  .ev .et { font-size: 15px; color: var(--muted); }
+  .ev .ett { font-size: 19px; font-weight: 600; line-height: 1.12; margin-top: 1px; }
+  .empty { color: var(--faint); font-size: 22px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <div id="title">Agenda · 2 prochaines semaines</div>
+    <div id="legend">
+      <div class="leg"><span class="d" style="background:var(--nico)"></span>Nico</div>
+      <div class="leg"><span class="d" style="background:var(--flo)"></span>Flo</div>
+      <div class="leg"><span class="d" style="background:var(--ens)"></span>Ensemble</div>
+    </div>
+  </div>
+  <div class="grid" id="row0"></div>
+  <div class="grid" id="row1"></div>
+</div>
+
+<script>
+/* Événements (démo). who : nico | flo | ens. off = nb de jours depuis aujourd'hui.
+   Plus tard : rempli depuis Google Agenda (mêmes champs). */
+var EVENTS = [
+  { off: 0,  time: "12 h 30", title: "Restaurant",          who: "ens" },
+  { off: 3,  time: "09 h 00", title: "Inventaire Liberté",  who: "flo" },
+  { off: 5,  time: "13 h 30", title: "Visio Touraine",      who: "flo" },
+  { off: 6,  time: "20 h 00", title: "Concert BigFlo et Oli", who: "ens" },
+  { off: 11, time: "18 h 30", title: "Ongles",              who: "flo" },
+  { off: 12, time: "Journée", title: "Thanksgiving",        who: "nico" },
+  { off: 13, time: "20 h 00", title: "Concert Bilal",       who: "flo" }
+];
+var WHO_COLOR = { nico: "var(--nico)", flo: "var(--flo)", ens: "var(--ens)" };
+var WD = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+var MO = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+
+function el(id) { return document.getElementById(id); }
+function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
+function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
+
+function dayLabel(d, off) {
+  if (off === 0) return { wd: "auj.", mo: MO[d.getMonth()] };
+  if (off === 1) return { wd: "dem.", mo: "" };
+  return { wd: WD[d.getDay()], mo: (d.getDate() === 1 ? MO[d.getMonth()] : "") };
+}
+function evHtml(e) {
+  return '<div class="ev"><div class="bar" style="background:' + (WHO_COLOR[e.who] || "var(--muted)") + '"></div>' +
+    (e.time ? '<div class="et">' + e.time + '</div>' : '') + '<div class="ett">' + e.title + '</div></div>';
+}
+
+function render() {
+  applyTheme();
+  var today = new Date(); today.setHours(0, 0, 0, 0);
+  for (var r = 0; r < 2; r++) {
+    var h = "";
+    for (var c = 0; c < 7; c++) {
+      var off = r * 7 + c, d = new Date(today.getTime() + off * 86400000);
+      var lab = dayLabel(d, off), isToday = (off === 0);
+      var evs = ""; var any = false;
+      for (var i = 0; i < EVENTS.length; i++) { if (EVENTS[i].off === off) { evs += evHtml(EVENTS[i]); any = true; } }
+      if (!any) evs = '<div class="empty">—</div>';
+      h += '<div class="day' + (isToday ? " today" : "") + '">' +
+        '<div class="dh' + (isToday ? " today" : "") + '"><span class="wd">' + lab.wd + '</span>' +
+          '<span class="nn">' + d.getDate() + '</span>' + (lab.mo ? '<span class="mo">' + lab.mo + '</span>' : '') + '</div>' +
+        evs + '</div>';
+    }
+    el("row" + r).innerHTML = h;
+  }
+}
+
+function fit() {
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800), st = el("stage").style;
+  st.webkitTransform = st.transform = "scale(" + s + ")";
+  st.left = ((window.innerWidth - 1280 * s) / 2) + "px";
+  st.top = ((window.innerHeight - 800 * s) / 2) + "px";
+}
+window.onresize = fit; fit(); applyTheme();
+render();
+setInterval(render, 60000);
+</script>
+</body>
+</html>

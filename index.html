@@ -95,6 +95,7 @@
     <iframe class="slide" id="s3" src="slide-courses.html"></iframe>
     <iframe class="slide" id="s4" src="slide-photos.html"></iframe>
     <iframe class="slide" id="s5" src="slide-trajets.html"></iframe>
+    <iframe class="slide" id="s6" src="slide-agenda.html"></iframe>
     <div id="prog"><div id="progFill"></div></div>
     <div id="pauseBadge"><svg viewBox="0 0 24 24"><rect class="ic" x="6" y="5" width="4" height="14" rx="1"/><rect class="ic" x="14" y="5" width="4" height="14" rx="1"/></svg>En pause · touchez pour reprendre</div>
   </div>
@@ -102,13 +103,16 @@
 <script>
 /* ---------- réglages ---------- */
 var ROTATE_MS = 30000;
-var N = 6;
+var N = 7;
 var TRAJETS_I = 5;   /* slide "Trajets" : dans la rotation seulement en semaine 6h-10h, sinon onglet */
+var AGENDA_I = 6;    /* slide "Agenda" : accessible au clic depuis l'Accueil, jamais en rotation auto */
 function inRotation(i) {
+  if (i === AGENDA_I) return false;
   if (i !== TRAJETS_I) return true;
   var d = new Date(), day = d.getDay(), h = d.getHours();
   return (day >= 1 && day <= 5 && h >= 6 && h < 10);
 }
+var SLIDE_IX = { aujourdhui: 0, domotique: 1, chauffage: 2, courses: 3, photos: 4, trajets: 5, agenda: 6 };
 
 /* Thème : clair par défaut (crème/jaune). ?theme=dark pour tester le sombre. */
 function currentTheme() {
@@ -130,11 +134,13 @@ function show(i) {
   if (i === cur) { restart(); return; }
   cur = i;
   for (var k = 0; k < N; k++) {
-    if (k === i) { slides[k].className = "slide on"; btns[k].className = "navBtn active"; }
-    else { slides[k].className = "slide"; btns[k].className = "navBtn"; }
+    if (k === i) { slides[k].className = "slide on"; if (btns[k]) btns[k].className = "navBtn active"; }
+    else { slides[k].className = "slide"; if (btns[k]) btns[k].className = "navBtn"; }
   }
   restart();
 }
+/* navigation par nom (ex. une slide peut ouvrir l'agenda) */
+window.goSlideName = function (name) { var i = SLIDE_IX[name]; if (i != null) { show(i); pauseRotation(); } };
 
 function next() {
   var i = cur;
@@ -177,7 +183,7 @@ function loop() {
   window.requestAnimationFrame ? requestAnimationFrame(loop) : setTimeout(loop, 100);
 }
 
-for (var k = 0; k < N; k++) {
+for (var k = 0; k < btns.length; k++) {
   (function (idx) { btns[idx].onclick = function () { show(idx); pauseRotation(); }; })(k);
 }
 for (var t = 0; t < N; t++) {

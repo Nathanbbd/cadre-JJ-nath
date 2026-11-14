@@ -73,7 +73,8 @@
            text-align: center; color: var(--faint); font-size: 16px; padding: 0 26px; line-height: 1.5; }
   #phelp b { color: var(--accent); }
 
-  #agenda { width: 388px; -webkit-flex: none; flex: none; padding: 18px 22px; overflow: hidden; }
+  #agenda { width: 388px; -webkit-flex: none; flex: none; padding: 18px 22px; overflow: hidden; cursor: pointer; }
+  #agenda .chev { float: right; color: var(--faint); font-weight: 700; }
   .agday { font-size: 18px; font-weight: 700; margin: 11px 0 3px; }
   .agday.first { margin-top: 0; }
   .agev { display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline; font-size: 15px; padding: 2px 0; }
@@ -132,7 +133,7 @@
     </div>
 
     <div id="agenda" class="panel">
-      <div class="lbl">Agenda</div>
+      <div class="lbl">Agenda<span class="chev">&#8250;</span></div>
       <div id="agList"></div>
     </div>
   </div>
@@ -415,6 +416,9 @@ function fit() {
   st.top = ((window.innerHeight - 800 * s) / 2) + "px";
 }
 window.onresize = fit; fit(); applyTheme();
+
+/* clic sur l'agenda -> ouvre la slide agenda plein écran */
+(function () { var a = el("agenda"); if (a) a.onclick = function () { try { if (window.parent && window.parent.goSlideName) window.parent.goSlideName("agenda"); } catch (e) {} }; })();
 
 render();
 loadAll();
