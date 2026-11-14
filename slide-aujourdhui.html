@@ -193,7 +193,7 @@ function scene(name, btn) {
 }
 
 /* ---------- photos (défilé, même source que la slide Photos) ---------- */
-var MANIFEST = "photos.json", HOLD_MS = 8000, PLIST = [], pidx = -1, player = 0, photosStarted = false;
+var MANIFEST = "https://photos-appart.boisbourdinnathande.workers.dev", HOLD_MS = 8000, PLIST = [], pidx = -1, player = 0, photosStarted = false;
 function psrc(n) { return (/^https?:\/\//.test(n)) ? n : ("photos/" + n); }
 function nextPhoto() {
   if (!PLIST.length) return;
@@ -204,7 +204,7 @@ function nextPhoto() {
   player = player ? 0 : 1;
 }
 function startPhotos(list) {
-  PLIST = list || [];
+  if (list && list.length) PLIST = list;        /* MAJ de la liste (URLs iCloud rafraîchies) */
   if (!PLIST.length) { el("phelp").style.display = "flex"; return; }
   el("phelp").style.display = "none";
   if (photosStarted) return; photosStarted = true;
@@ -455,6 +455,7 @@ function tick() { render(); setTimeout(tick, 60000 - (Date.now() % 60000) + 50);
 setTimeout(tick, 60000 - (Date.now() % 60000) + 50);
 setInterval(loadTrajets, 60000);
 setInterval(loadAll, REFRESH_MIN * 60000);
+setInterval(loadPhotos, 2700000);   /* re-charge la liste photos toutes les 45 min (URLs iCloud expirent) */
 </script>
 </body>
 </html>
