@@ -63,6 +63,12 @@
   #pauseBadge.on { display: -webkit-flex; display: flex; }
   #pauseBadge svg { width: 20px; height: 20px; margin-right: 10px; }
   #pauseBadge .ic { fill: var(--navactiveic); }
+
+  /* écran de veille (nuit) */
+  #veille { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: #000; z-index: 50;
+            display: none; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
+  #veille.on { display: -webkit-flex; display: flex; }
+  #vclock { color: #1c1c1c; font-family: "Roboto", Arial, sans-serif; font-size: 120px; font-weight: 300; letter-spacing: 2px; }
 </style>
 </head>
 <body>
@@ -103,109 +109,93 @@
     <iframe class="slide" id="s5" src="slide-domotique.html"></iframe>
     <iframe class="slide" id="s6" src="slide-chauffage.html"></iframe>
     <iframe class="slide" id="s7" src="slide-musique.html"></iframe>
+    <iframe class="slide" id="s8" src="slide-reglages.html"></iframe>
     <div id="prog"><div id="progFill"></div></div>
     <div id="pauseBadge"><svg viewBox="0 0 24 24"><rect class="ic" x="6" y="5" width="4" height="14" rx="1"/><rect class="ic" x="14" y="5" width="4" height="14" rx="1"/></svg>En pause · touchez pour reprendre</div>
   </div>
+  <div id="veille"><div id="vclock"></div></div>
 
 <script>
-/* ---------- réglages ---------- */
-var ROTATE_MS = 30000;
-var N = 8;
-var TRAJETS_I = 3;   /* slide "Trajets" : dans la rotation seulement en semaine 6h-10h, sinon onglet */
-var AGENDA_I = 2;    /* slide "Agenda" : accessible au clic depuis l'Accueil, jamais en rotation auto */
-function inRotation(i) {
-  if (i === AGENDA_I) return false;
-  if (i !== TRAJETS_I) return true;
-  var d = new Date(), day = d.getDay(), h = d.getHours();
-  return (day >= 1 && day <= 5 && h >= 6 && h < 10);
+/* ---------- config du cadre (stockée en local, réglable via la slide Réglages) ---------- */
+var N = 9;
+var NAMES = ["aujourdhui","courses","agenda","trajets","photos","domotique","chauffage","musique","reglages"];
+var SLIDE_IX = { aujourdhui:0, courses:1, agenda:2, trajets:3, photos:4, domotique:5, chauffage:6, musique:7, reglages:8 };
+var DEFAULT_PAGES = {
+  aujourdhui:{sec:30,rot:true}, courses:{sec:30,rot:true}, agenda:{sec:30,rot:false},
+  trajets:{sec:30,rot:true}, photos:{sec:40,rot:true}, domotique:{sec:30,rot:true},
+  chauffage:{sec:30,rot:true}, musique:{sec:30,rot:true}
+};
+var DEFAULT_VEILLE = { enabled:false, start:"23:00", end:"07:00", wake:120 };
+function merge(d,o){ var r={}; for(var k in d) r[k]=d[k]; if(o) for(var k2 in o){ if(o[k2]!=null) r[k2]=o[k2]; } return r; }
+function getCfg(){
+  var c={}; try{ c=JSON.parse(localStorage.getItem("cadreCfg")||"{}")||{}; }catch(e){}
+  var cfg={ veille: merge(DEFAULT_VEILLE, c.veille), pages:{} };
+  for(var n in DEFAULT_PAGES){ cfg.pages[n]=merge(DEFAULT_PAGES[n], c.pages && c.pages[n]); }
+  return cfg;
 }
-var SLIDE_IX = { aujourdhui: 0, courses: 1, agenda: 2, trajets: 3, photos: 4, domotique: 5, chauffage: 6, musique: 7 };
+var CFG = getCfg();
+function pad(n){ return n<10?"0"+n:""+n; }
+function inRotation(i){ var n=NAMES[i]; if(n==="reglages") return false; var pg=CFG.pages[n]; return pg?!!pg.rot:true; }
+function durOf(i){ var n=NAMES[i], pg=CFG.pages[n]; return (pg&&pg.sec?pg.sec:30)*1000; }
 
-/* Thème : clair par défaut (crème/jaune). ?theme=dark pour tester le sombre. */
-function currentTheme() {
-  var ov = (location.search.match(/theme=(light|dark)/) || [])[1];
-  return ov || "light";
-}
-function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
+function currentTheme(){ var ov=(location.search.match(/theme=(light|dark)/)||[])[1]; return ov||"light"; }
+function applyTheme(){ document.documentElement.setAttribute("data-theme", currentTheme()); }
 applyTheme();
 
-var PAUSE_MS = 60000;   /* reprise auto 60 s après le dernier toucher */
-var cur = -1, timer = null, start = 0, paused = false, pauseTimer = null;
-var slides = [];
-for (var si = 0; si < N; si++) slides.push(document.getElementById("s" + si));
-var btns = document.getElementsByClassName("navBtn");
-var progFill = document.getElementById("progFill");
-var pauseBadge = document.getElementById("pauseBadge");
+var PAUSE_MS = 60000;
+var cur=-1, timer=null, start=0, paused=false, pauseTimer=null;
+var slides=[]; for(var si=0; si<N; si++) slides.push(document.getElementById("s"+si));
+var btns=document.getElementsByClassName("navBtn");
+var progFill=document.getElementById("progFill");
+var pauseBadge=document.getElementById("pauseBadge");
 
-function show(i) {
-  if (i === cur) { restart(); return; }
-  cur = i;
-  for (var k = 0; k < N; k++) {
-    if (k === i) { slides[k].className = "slide on"; if (btns[k]) btns[k].className = "navBtn active"; }
-    else { slides[k].className = "slide"; if (btns[k]) btns[k].className = "navBtn"; }
+function show(i){
+  if(i===cur){ restart(); return; }
+  cur=i;
+  for(var k=0;k<N;k++){
+    if(k===i){ slides[k].className="slide on"; if(btns[k]) btns[k].className="navBtn active"; }
+    else { slides[k].className="slide"; if(btns[k]) btns[k].className="navBtn"; }
   }
   restart();
 }
-/* navigation par nom (ex. une slide peut ouvrir l'agenda) */
-window.goSlideName = function (name) { var i = SLIDE_IX[name]; if (i != null) { show(i); pauseRotation(); } };
+window.goSlideName=function(name){ var i=SLIDE_IX[name]; if(i!=null){ show(i); pauseRotation(); } };
 
-function next() {
-  var i = cur;
-  for (var k = 0; k < N; k++) { i = (i + 1) % N; if (inRotation(i)) break; }
-  show(i);
-}
+function next(){ var i=cur; for(var k=0;k<N;k++){ i=(i+1)%N; if(inRotation(i)) break; } show(i); }
+function restart(){ start=Date.now(); if(timer) clearTimeout(timer); if(!paused) timer=setTimeout(next, durOf(cur)); }
 
-function restart() {
-  start = Date.now();
-  if (timer) clearTimeout(timer);
-  if (!paused) timer = setTimeout(next, ROTATE_MS);
-}
+/* pause au toucher */
+function pauseRotation(){ paused=true; if(timer){clearTimeout(timer);timer=null;} if(pauseBadge) pauseBadge.className="on"; if(pauseTimer) clearTimeout(pauseTimer); pauseTimer=setTimeout(resumeRotation,PAUSE_MS); }
+function resumeRotation(){ paused=false; if(pauseTimer){clearTimeout(pauseTimer);pauseTimer=null;} if(pauseBadge) pauseBadge.className=""; restart(); }
+function attachTouch(fr){ try{ var d=fr.contentDocument||(fr.contentWindow&&fr.contentWindow.document); if(!d) return; d.addEventListener("touchstart",pauseRotation,true); d.addEventListener("mousedown",pauseRotation,true); }catch(e){} }
 
-/* ---------- pause au toucher ---------- */
-function pauseRotation() {
-  paused = true;
-  if (timer) { clearTimeout(timer); timer = null; }
-  if (pauseBadge) pauseBadge.className = "on";
-  if (pauseTimer) clearTimeout(pauseTimer);
-  pauseTimer = setTimeout(resumeRotation, PAUSE_MS);
-}
-function resumeRotation() {
-  paused = false;
-  if (pauseTimer) { clearTimeout(pauseTimer); pauseTimer = null; }
-  if (pauseBadge) pauseBadge.className = "";
-  restart();
-}
-function attachTouch(fr) {
-  try {
-    var d = fr.contentDocument || (fr.contentWindow && fr.contentWindow.document);
-    if (!d) return;
-    d.addEventListener("touchstart", pauseRotation, true);
-    d.addEventListener("mousedown", pauseRotation, true);
-  } catch (e) {}
-}
+function loop(){ var dur=durOf(cur); var f=paused?0:Math.min(1,(Date.now()-start)/dur); progFill.style.width=(f*100)+"%"; window.requestAnimationFrame?requestAnimationFrame(loop):setTimeout(loop,100); }
 
-function loop() {
-  var f = paused ? 0 : Math.min(1, (Date.now() - start) / ROTATE_MS);
-  progFill.style.width = (f * 100) + "%";
-  window.requestAnimationFrame ? requestAnimationFrame(loop) : setTimeout(loop, 100);
-}
+for(var kb=0;kb<btns.length;kb++){ (function(idx){ btns[idx].onclick=function(){ show(idx); pauseRotation(); }; })(kb); }
+for(var t=0;t<N;t++){ (function(fr){ if(fr){ fr.addEventListener("load",function(){ attachTouch(fr); }); attachTouch(fr); } })(slides[t]); }
+if(pauseBadge) pauseBadge.onclick=resumeRotation;
 
-for (var k = 0; k < btns.length; k++) {
-  (function (idx) { btns[idx].onclick = function () { show(idx); pauseRotation(); }; })(k);
-}
-for (var t = 0; t < N; t++) {
-  (function (fr) { if (fr) { fr.addEventListener("load", function () { attachTouch(fr); }); attachTouch(fr); } })(slides[t]);
-}
-if (pauseBadge) pauseBadge.onclick = resumeRotation;
+/* ---------- veille (nuit) ---------- */
+var veilleEl=document.getElementById("veille"), vclockEl=document.getElementById("vclock"), wakeUntil=0;
+function parisHM(){ try{ return new Intl.DateTimeFormat("en-GB",{timeZone:"Europe/Paris",hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).format(new Date()); }catch(e){ var d=new Date(); return pad(d.getHours())+":"+pad(d.getMinutes()); } }
+function inWin(a,b,hm){ if(!a||!b||a===b) return false; return a<b?(hm>=a&&hm<b):(hm>=a||hm<b); }
+function veilleActive(){ return !!(CFG.veille.enabled && inWin(CFG.veille.start, CFG.veille.end, parisHM())); }
+function applyVeille(){ var on = veilleActive() && Date.now()>=wakeUntil; if(veilleEl) veilleEl.className=on?"on":""; if(on && vclockEl){ var d=new Date(); vclockEl.textContent=pad(d.getHours())+":"+pad(d.getMinutes()); } }
+if(veilleEl){ veilleEl.onclick=function(){ wakeUntil=Date.now()+(CFG.veille.wake||120)*1000; applyVeille(); }; }
 
-/* Une slide peut demander à rester affichée (ex. réglage du chauffage) : on met en pause */
-window.addEventListener("message", function (e) { if (e.data === "cadre-stay") pauseRotation(); });
+/* messages depuis les slides */
+window.addEventListener("message", function(e){
+  if(e.data==="cadre-stay") pauseRotation();
+  else if(e.data==="cadre-reload"){ try{ location.reload(); }catch(_){} }
+  else if(e.data==="cadre-cfg"){ CFG=getCfg(); applyVeille(); if(!paused) restart(); }
+});
 
 show(0);
 loop();
+applyVeille();
+setInterval(applyVeille, 15000);
 
-/* Filet de sécurité : recharge tout le dashboard une fois par heure. */
-setInterval(function () { try { location.reload(); } catch (e) {} }, 60 * 60 * 1000);
+/* filet de sécurité : recharge le dashboard 1x par heure */
+setInterval(function(){ try{ location.reload(); }catch(e){} }, 60*60*1000);
 </script>
 </body>
 </html>

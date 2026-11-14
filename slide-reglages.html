@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Réglages</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192; --line:#e8e3d7;
+          --yellow:#f2b600; --accent:#b7791f; --field:#efe9dc; --ok:#2e8b57; }
+  :root[data-theme="dark"] { --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a; --line:#332f27;
+          --yellow:#f2b600; --accent:#f2b600; --field:#2a2721; --ok:#6fcf97; }
+  * { -webkit-box-sizing:border-box; box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); overflow:hidden; }
+  body { font-family:"Barlow","Roboto",Arial,sans-serif; color:var(--ink); -webkit-user-select:none; user-select:none; }
+  #stage { position:absolute; left:0; top:0; width:1280px; height:800px; background:var(--bg); -webkit-transform-origin:0 0; transform-origin:0 0;
+           padding:26px 40px; display:-webkit-flex; display:flex; -webkit-flex-direction:column; flex-direction:column; }
+
+  #head { display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-flex:none; flex:none; margin-bottom:16px; }
+  #title { font-size:40px; font-weight:700; }
+  #close { margin-left:auto; width:56px; height:56px; border-radius:28px; background:var(--panel); border:1px solid var(--line);
+           display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; font-size:30px; color:var(--muted); cursor:pointer; }
+  #reload { margin-left:14px; height:56px; padding:0 22px; border-radius:16px; background:var(--yellow); color:#2e2b26; font-size:20px; font-weight:600;
+            display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; cursor:pointer; }
+  #reload svg { width:22px; height:22px; margin-right:10px; } #reload .ic { fill:none; stroke:#2e2b26; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+  #body { -webkit-flex:1; flex:1; display:-webkit-flex; display:flex; min-height:0; }
+  .col { -webkit-flex:1; flex:1; min-width:0; overflow:hidden; }
+  .col + .col { margin-left:26px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:20px 24px; margin-bottom:18px; }
+  .ttl { font-size:15px; letter-spacing:1.3px; text-transform:uppercase; color:var(--faint); font-weight:700; margin-bottom:14px; }
+
+  .row { display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; padding:9px 0; }
+  .row .lab { -webkit-flex:1; flex:1; font-size:21px; }
+  .row .sub { font-size:15px; color:var(--muted); }
+  input[type=time] { font-size:21px; padding:8px 12px; border:1px solid var(--line); border-radius:12px; background:var(--field); color:var(--ink); font-family:inherit; }
+  input.num { width:92px; font-size:21px; padding:8px 10px; border:1px solid var(--line); border-radius:12px; background:var(--field); color:var(--ink); font-family:inherit; text-align:center; }
+
+  /* switch */
+  .sw { position:relative; width:64px; height:36px; -webkit-flex:none; flex:none; }
+  .sw input { opacity:0; width:0; height:0; }
+  .sl { position:absolute; inset:0; background:var(--line); border-radius:36px; -webkit-transition:.2s; transition:.2s; cursor:pointer; }
+  .sl:before { content:""; position:absolute; height:28px; width:28px; left:4px; top:4px; background:#fff; border-radius:50%; -webkit-transition:.2s; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.25); }
+  .sw input:checked + .sl { background:var(--yellow); }
+  .sw input:checked + .sl:before { -webkit-transform:translateX(28px); transform:translateX(28px); }
+
+  .pg { display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
+  .pg:first-child { border-top:0; }
+  .pgName { -webkit-flex:1; flex:1; font-size:20px; font-weight:500; }
+  .pgSec { width:78px; font-size:19px; padding:7px 8px; border:1px solid var(--line); border-radius:11px; background:var(--field); color:var(--ink); font-family:inherit; text-align:center; margin-right:16px; }
+  .pgU { font-size:15px; color:var(--muted); margin:0 16px 0 -10px; }
+  #saved { position:absolute; right:40px; bottom:16px; font-size:16px; color:var(--ok); font-weight:600; opacity:0; -webkit-transition:opacity .25s; transition:opacity .25s; }
+  #saved.on { opacity:1; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="head">
+    <div id="title">Réglages</div>
+    <div id="reload"><svg viewBox="0 0 24 24"><path class="ic" d="M20 11a8 8 0 1 0-.7 3.3"/><path class="ic" d="M20 5v6h-6"/></svg>Recharger</div>
+    <div id="close">&#10005;</div>
+  </div>
+
+  <div id="body">
+    <div class="col">
+      <div class="card">
+        <div class="ttl">Veille de nuit</div>
+        <div class="row"><div class="lab">Activer la veille<div class="sub">écran noir sur la plage horaire</div></div>
+          <label class="sw"><input type="checkbox" id="vEn"><span class="sl"></span></label></div>
+        <div class="row"><div class="lab">Écran noir de</div><input type="time" id="vStart"></div>
+        <div class="row"><div class="lab">à</div><input type="time" id="vEnd"></div>
+        <div class="row"><div class="lab">Réveil au toucher<div class="sub">durée avant de se rendormir</div></div>
+          <input type="number" class="num" id="vWake" min="10" max="900" step="10"><span class="pgU">s</span></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card">
+        <div class="ttl">Pages — durée &amp; rotation</div>
+        <div id="pages"></div>
+      </div>
+    </div>
+  </div>
+  <div id="saved">Enregistré ✓</div>
+</div>
+
+<script>
+var NAMES = ["aujourdhui","courses","agenda","trajets","photos","domotique","chauffage","musique"];
+var FR = { aujourdhui:"Accueil", courses:"Courses & tâches", agenda:"Agenda", trajets:"Trajets", photos:"Photos", domotique:"Domotique", chauffage:"Chauffage", musique:"Musique" };
+var DEFAULT_PAGES = {
+  aujourdhui:{sec:30,rot:true}, courses:{sec:30,rot:true}, agenda:{sec:30,rot:false},
+  trajets:{sec:30,rot:true}, photos:{sec:40,rot:true}, domotique:{sec:30,rot:true},
+  chauffage:{sec:30,rot:true}, musique:{sec:30,rot:true}
+};
+var DEFAULT_VEILLE = { enabled:false, start:"23:00", end:"07:00", wake:120 };
+
+function el(id){ return document.getElementById(id); }
+function currentTheme(){ var ov=(location.search.match(/theme=(light|dark)/)||[])[1]; return ov||"light"; }
+function applyTheme(){ document.documentElement.setAttribute("data-theme", currentTheme()); }
+function merge(d,o){ var r={}; for(var k in d) r[k]=d[k]; if(o) for(var k2 in o){ if(o[k2]!=null) r[k2]=o[k2]; } return r; }
+function getCfg(){
+  var c={}; try{ c=JSON.parse(localStorage.getItem("cadreCfg")||"{}")||{}; }catch(e){}
+  var cfg={ veille: merge(DEFAULT_VEILLE, c.veille), pages:{} };
+  for(var n in DEFAULT_PAGES){ cfg.pages[n]=merge(DEFAULT_PAGES[n], c.pages && c.pages[n]); }
+  return cfg;
+}
+
+var savedT;
+function flashSaved(){ el("saved").className="on"; clearTimeout(savedT); savedT=setTimeout(function(){ el("saved").className=""; }, 1200); }
+function save(){
+  var cfg = { veille:{ enabled: el("vEn").checked, start: el("vStart").value||"23:00", end: el("vEnd").value||"07:00", wake: Math.max(10, Math.min(900, parseInt(el("vWake").value,10)||120)) }, pages:{} };
+  for(var i=0;i<NAMES.length;i++){ var n=NAMES[i];
+    cfg.pages[n] = { sec: Math.max(5, Math.min(600, parseInt(el("sec_"+n).value,10)||30)), rot: el("rot_"+n).checked };
+  }
+  try{ localStorage.setItem("cadreCfg", JSON.stringify(cfg)); }catch(e){}
+  try{ if(window.parent) window.parent.postMessage("cadre-cfg","*"); }catch(e){}
+  flashSaved();
+}
+
+function build(){
+  applyTheme();
+  var cfg=getCfg();
+  el("vEn").checked=!!cfg.veille.enabled;
+  el("vStart").value=cfg.veille.start; el("vEnd").value=cfg.veille.end; el("vWake").value=cfg.veille.wake;
+  el("vEn").onchange=save; el("vStart").onchange=save; el("vEnd").onchange=save; el("vWake").onchange=save;
+
+  var h="";
+  for(var i=0;i<NAMES.length;i++){ var n=NAMES[i], p=cfg.pages[n];
+    h += '<div class="pg"><div class="pgName">'+FR[n]+'</div>'+
+      '<input type="number" class="pgSec" id="sec_'+n+'" min="5" max="600" step="5" value="'+p.sec+'"><span class="pgU">s</span>'+
+      '<label class="sw"><input type="checkbox" id="rot_'+n+'"'+(p.rot?" checked":"")+'><span class="sl"></span></label></div>';
+  }
+  el("pages").innerHTML=h;
+  for(var j=0;j<NAMES.length;j++){ (function(n){ el("sec_"+n).onchange=save; el("rot_"+n).onchange=save; })(NAMES[j]); }
+
+  el("reload").onclick=function(){ try{ window.parent.postMessage("cadre-reload","*"); }catch(e){} };
+  el("close").onclick=function(){ try{ window.parent.goSlideName("aujourdhui"); }catch(e){} };
+}
+
+function fit(){
+  var s=Math.min(window.innerWidth/1280, window.innerHeight/800), st=el("stage").style;
+  st.webkitTransform=st.transform="scale("+s+")";
+  st.left=((window.innerWidth-1280*s)/2)+"px"; st.top=((window.innerHeight-800*s)/2)+"px";
+}
+window.onresize=fit; fit(); build();
+</script>
+</body>
+</html>

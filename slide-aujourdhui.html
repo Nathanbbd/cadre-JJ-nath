@@ -29,6 +29,10 @@
   #clockbox { width: 340px; -webkit-flex: none; flex: none; }
   #clock { font-size: 88px; font-weight: 800; line-height: 0.9; letter-spacing: -2px; }
   #date { font-size: 23px; color: var(--muted); margin-top: 10px; text-transform: capitalize; }
+  #gear { width: 48px; height: 48px; border-radius: 24px; background: var(--panel); border: 1px solid var(--line); margin-top: 20px;
+          display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; cursor: pointer; }
+  #gear svg { width: 26px; height: 26px; }
+  #gear .ic { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   #weather { -webkit-flex: 1; flex: 1; margin-left: 24px; padding: 16px 24px; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
   #wcTop { display: -webkit-flex; display: flex; -webkit-align-items: flex-start; align-items: flex-start; }
@@ -104,7 +108,9 @@
 <div id="stage">
 
   <div id="top">
-    <div id="clockbox"><div id="clock"></div><div id="date"></div></div>
+    <div id="clockbox"><div id="clock"></div><div id="date"></div>
+      <div id="gear" title="Réglages"><svg viewBox="0 0 24 24"><circle class="ic" cx="12" cy="12" r="3.2"/><path class="ic" d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9 19 19M19 5l-2.1 2.1M7.1 16.9 5 19"/></svg></div>
+    </div>
     <div id="weather" class="panel">
       <div id="wcTop">
         <div id="wcLeft"><div id="wcCity">Levallois-Perret</div><div id="wcTemp"></div></div>
@@ -440,6 +446,7 @@ window.onresize = fit; fit(); applyTheme();
 
 /* clic sur l'agenda -> ouvre la slide agenda plein écran */
 (function () { var a = el("agenda"); if (a) a.onclick = function () { try { if (window.parent && window.parent.goSlideName) window.parent.goSlideName("agenda"); } catch (e) {} }; })();
+(function () { var g = el("gear"); if (g) g.onclick = function () { try { if (window.parent && window.parent.goSlideName) window.parent.goSlideName("reglages"); } catch (e) {} }; })();
 
 render();
 loadAll();
