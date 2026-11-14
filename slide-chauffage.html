@@ -37,12 +37,12 @@
           -webkit-align-items: center; align-items: center; padding: 22px 20px 20px; }
   .room + .room { margin-left: 28px; }
   .rName { font-size: 30px; font-weight: 600; }
-  .dial { position: relative; width: 300px; height: 252px; margin-top: 14px; }
+  .dial { position: relative; width: 300px; height: 252px; margin-top: 6px; }
   .dial svg { position: absolute; left: 0; top: 0; }
-  .center { position: absolute; left: 0; right: 0; top: 76px; text-align: center; }
-  .now { font-size: 92px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  .center { position: absolute; left: 0; right: 0; top: 72px; text-align: center; }
+  .now { font-size: 80px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
   .now sup { font-size: 40px; font-weight: 600; vertical-align: top; position: relative; top: 8px; }
-  .sp { font-size: 22px; color: var(--muted); margin-top: 6px; }
+  .sp { font-size: 18px; color: var(--muted); margin-top: 2px; }
   .sp b { color: var(--ink); }
   .prof { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
           font-size: 18px; color: var(--muted); margin-top: 8px; min-height: 40px; }
@@ -186,7 +186,7 @@ function profLine(s) {
 }
 
 /* ---------- affichage ---------- */
-var C = 165, R = 140;
+var C = 165, R = 116;   /* rayon réduit : l'arc ne remonte plus jusqu'au nom de la pièce */
 function ang(v) { return 135 + (Math.max(14, Math.min(26, v)) - 14) / 12 * 270; }
 function pt(a) { var r = a * Math.PI / 180; return [C + R * Math.cos(r), 150 + R * Math.sin(r)]; }
 function arc(a1, a2) { if (a2 - a1 < 0.5) a2 = a1 + 0.5; var p = pt(a1), q = pt(a2);
