@@ -89,6 +89,9 @@
     <div class="navBtn" data-i="6" title="Agenda">
       <svg viewBox="0 0 24 24"><rect class="ic" x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path class="ic" d="M3.5 9.5h17"/><path class="ic" d="M8 3.5v3M16 3.5v3"/></svg>
     </div>
+    <div class="navBtn" data-i="7" title="Musique">
+      <svg viewBox="0 0 24 24"><path class="ic" d="M9 17.5V5l10-2v12.5"/><circle class="ic" cx="6.5" cy="18" r="2.5"/><circle class="ic" cx="16.5" cy="16" r="2.5"/></svg>
+    </div>
   </div>
 
   <div id="stageWrap">
@@ -99,6 +102,7 @@
     <iframe class="slide" id="s4" src="slide-photos.html"></iframe>
     <iframe class="slide" id="s5" src="slide-trajets.html"></iframe>
     <iframe class="slide" id="s6" src="slide-agenda.html"></iframe>
+    <iframe class="slide" id="s7" src="slide-musique.html"></iframe>
     <div id="prog"><div id="progFill"></div></div>
     <div id="pauseBadge"><svg viewBox="0 0 24 24"><rect class="ic" x="6" y="5" width="4" height="14" rx="1"/><rect class="ic" x="14" y="5" width="4" height="14" rx="1"/></svg>En pause · touchez pour reprendre</div>
   </div>
@@ -106,7 +110,7 @@
 <script>
 /* ---------- réglages ---------- */
 var ROTATE_MS = 30000;
-var N = 7;
+var N = 8;
 var TRAJETS_I = 5;   /* slide "Trajets" : dans la rotation seulement en semaine 6h-10h, sinon onglet */
 var AGENDA_I = 6;    /* slide "Agenda" : accessible au clic depuis l'Accueil, jamais en rotation auto */
 function inRotation(i) {
@@ -115,7 +119,7 @@ function inRotation(i) {
   var d = new Date(), day = d.getDay(), h = d.getHours();
   return (day >= 1 && day <= 5 && h >= 6 && h < 10);
 }
-var SLIDE_IX = { aujourdhui: 0, domotique: 1, chauffage: 2, courses: 3, photos: 4, trajets: 5, agenda: 6 };
+var SLIDE_IX = { aujourdhui: 0, domotique: 1, chauffage: 2, courses: 3, photos: 4, trajets: 5, agenda: 6, musique: 7 };
 
 /* Thème : clair par défaut (crème/jaune). ?theme=dark pour tester le sombre. */
 function currentTheme() {
