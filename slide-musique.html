@@ -42,6 +42,8 @@
   #vol .sp { width:34px; height:34px; margin-right:16px; -webkit-flex:none; flex:none; }
   #vol .sp .ic { fill:none; stroke:var(--muted); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
   .vbtn { width:62px; height:62px; border-radius:31px; background:rgba(255,255,255,0.72); -webkit-flex:none; flex:none; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; font-size:34px; font-weight:600; color:var(--ink); cursor:pointer; box-shadow:0 5px 14px rgba(0,0,0,0.1); -webkit-user-select:none; user-select:none; }
+  #vol.novol .vbtn { opacity:0.35; }
+  #vol.novol #vtrack { opacity:0.5; }
   #vtrack { -webkit-flex:1; flex:1; height:8px; border-radius:4px; background:var(--track); margin:0 18px; position:relative; }
   #vfill { position:absolute; left:0; top:0; bottom:0; border-radius:4px; background:var(--accent); width:0; }
   #vknob { position:absolute; top:50%; left:0; width:22px; height:22px; border-radius:11px; background:var(--accent); -webkit-transform:translate(-50%,-50%); transform:translate(-50%,-50%); box-shadow:0 2px 6px rgba(0,0,0,0.25); }
@@ -128,6 +130,8 @@ function applyData(d){
   el("tdur").textContent = fmt(d.duration);
   state.duration=d.duration; state.progress=d.progress; state.playing=d.playing; state.lastFetch=Date.now();
   if(d.volume!=null) setVol(d.volume);
+  state.canVolume = !!d.canVolume;
+  el("vol").className = state.canVolume ? "" : "novol";
   setPlay(d.playing);
   if(d.cover && d.cover!==curCover){
     curCover=d.cover;
@@ -167,8 +171,8 @@ function cmd(a,v){
 el("play").onclick=function(){ var np=!state.playing; state.playing=np; setPlay(np); cmd(np?"play":"pause"); };
 el("prev").onclick=function(){ cmd("prev"); };
 el("next").onclick=function(){ cmd("next"); };
-el("vminus").onclick=function(){ var v=clamp((state.volume||0)-10,0,100); setVol(v); cmd("vol",v); };
-el("vplus").onclick=function(){ var v=clamp((state.volume||0)+10,0,100); setVol(v); cmd("vol",v); };
+el("vminus").onclick=function(){ if(!state.canVolume) return; var v=clamp((state.volume||0)-5,0,100); setVol(v); cmd("vol",v); };
+el("vplus").onclick=function(){ if(!state.canVolume) return; var v=clamp((state.volume||0)+5,0,100); setVol(v); cmd("vol",v); };
 
 function fit(){
   var s=Math.min(window.innerWidth/1280, window.innerHeight/800), st=el("stage").style;
