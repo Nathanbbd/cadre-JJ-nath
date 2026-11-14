@@ -53,17 +53,16 @@
   #prog { position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 11; }
   #progFill { height: 100%; width: 0; background: var(--prog); }
 
-  /* Badge "en pause" (quand on touche une slide) */
+  /* Petit rond discret "en pause" (quand on touche une slide) — appuyer = reprendre */
   #pauseBadge {
-    position: absolute; left: 84px; top: 50%; -webkit-transform: translateY(-50%); transform: translateY(-50%);
-    z-index: 20; display: none;
-    background: var(--navactive); color: var(--navactiveic); font-family: "Roboto", Arial, sans-serif;
-    font-size: 14px; font-weight: 600; letter-spacing: 1px; padding: 14px 7px; border-radius: 14px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.22); cursor: pointer;
-    -webkit-writing-mode: vertical-rl; writing-mode: vertical-rl; text-orientation: mixed;
+    position: absolute; left: 18px; bottom: 18px; z-index: 20; display: none;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: rgba(0,0,0,0.28); cursor: pointer; opacity: 0.55;
+    -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
   }
-  #pauseBadge.on { display: block; }
-  #pauseBadge svg { display: none; }
+  #pauseBadge.on { display: -webkit-flex; display: flex; }
+  #pauseBadge svg { display: block; width: 15px; height: 15px; margin-left: 2px; }
+  #pauseBadge svg .ic { fill: #fff; }
 
   /* écran de veille (nuit) */
   #veille { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: #000; z-index: 50;
@@ -112,7 +111,7 @@
     <iframe class="slide" id="s7" src="slide-musique.html"></iframe>
     <iframe class="slide" id="s8" src="slide-reglages.html"></iframe>
     <div id="prog"><div id="progFill"></div></div>
-    <div id="pauseBadge"><svg viewBox="0 0 24 24"><rect class="ic" x="6" y="5" width="4" height="14" rx="1"/><rect class="ic" x="14" y="5" width="4" height="14" rx="1"/></svg>En pause · touchez pour reprendre</div>
+    <div id="pauseBadge" title="Reprendre le défilement"><svg viewBox="0 0 24 24"><path class="ic" d="M7 5l12 7-12 7z"/></svg></div>
   </div>
   <div id="veille"><div id="vclock"></div></div>
 
