@@ -149,9 +149,13 @@ function tickProgress(){
 function load(){
   var x=new XMLHttpRequest(); try{ x.open("GET", WORKER+"?t="+Date.now()); }catch(e){}
   x.timeout=10000;
-  x.onload=function(){ if(x.status===200){ try{ applyData(JSON.parse(x.responseText)); }catch(e){} } };
-  x.onerror=x.ontimeout=function(){ msg("Musique indisponible"); };
-  try{ x.send(); }catch(e){ msg("Musique indisponible"); }
+  x.onload=function(){
+    if(x.status===200){ try{ applyData(JSON.parse(x.responseText)); return; }catch(e){ msg("Réponse illisible"); return; } }
+    msg("Worker : HTTP " + x.status);
+  };
+  x.onerror=function(){ msg("Connexion au worker impossible"); };
+  x.ontimeout=function(){ msg("Worker : délai dépassé"); };
+  try{ x.send(); }catch(e){ msg("Erreur : " + (e && e.message)); }
 }
 function cmd(a,v){
   var u=WORKER+"/cmd?a="+a+(v!=null?"&v="+v:"");
