@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Aujourd'hui</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192;
@@ -19,74 +19,72 @@
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
   body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
   #stage { position: absolute; left: 0; top: 0; width: 1280px; height: 800px; background: var(--bg);
-           -webkit-transform-origin: 0 0; transform-origin: 0 0; }
+           -webkit-transform-origin: 0 0; transform-origin: 0 0; padding: 30px 40px; -webkit-box-sizing: border-box; box-sizing: border-box;
+           display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 22px; }
+  .lbl { font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--faint); font-weight: 700; margin-bottom: 10px; }
 
-  #head { display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; padding: 32px 60px 10px; }
-  #date { -webkit-flex: 1; flex: 1; }
-  #dow { font-size: 40px; font-weight: 600; line-height: 1; text-transform: capitalize; }
-  #dnum { font-size: 21px; color: var(--muted); margin-top: 6px; text-transform: capitalize; }
-  #clock { font-size: 66px; font-weight: 600; line-height: 1; }
+  /* ---------- haut : horloge + météo ---------- */
+  #top { display: -webkit-flex; display: flex; height: 208px; -webkit-flex: none; flex: none; }
+  #clockbox { width: 340px; -webkit-flex: none; flex: none; }
+  #clock { font-size: 88px; font-weight: 800; line-height: 0.9; letter-spacing: -2px; }
+  #date { font-size: 23px; color: var(--muted); margin-top: 10px; text-transform: capitalize; }
 
-  /* carte météo façon widget */
-  #wcard { margin: 6px 60px 0; background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 20px 28px 22px; }
+  #weather { -webkit-flex: 1; flex: 1; margin-left: 24px; padding: 16px 24px; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
   #wcTop { display: -webkit-flex; display: flex; -webkit-align-items: flex-start; align-items: flex-start; }
   #wcLeft { -webkit-flex: 1; flex: 1; }
-  #wcCity { font-size: 24px; font-weight: 600; }
-  #wcTemp { font-size: 76px; font-weight: 600; line-height: 0.95; }
-  #wcTemp span { font-size: 34px; vertical-align: 34px; color: var(--muted); }
-  #wcRight { text-align: right; padding-top: 6px; }
-  #wcCond { font-size: 28px; font-weight: 600; }
-  #wcHL { font-size: 24px; color: var(--muted); margin-top: 4px; }
+  #wcCity { font-size: 20px; font-weight: 600; color: var(--muted); }
+  #wcTemp { font-size: 58px; font-weight: 700; line-height: 0.95; }
+  #wcTemp span { font-size: 26px; vertical-align: 26px; color: var(--muted); }
+  #wcRight { text-align: right; padding-top: 4px; }
+  #wcCond { font-size: 24px; font-weight: 600; }
+  #wcHL { font-size: 21px; color: var(--muted); margin-top: 4px; }
   #wcHL b { color: var(--ink); font-weight: 600; }
-
-  #wcHours { display: -webkit-flex; display: flex; margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
-  .hr { -webkit-flex: 1; flex: 1; text-align: center; padding: 4px 0; border-radius: 10px; }
-  .hr .hl { font-size: 15px; color: var(--muted); }
-  .hr .hi { height: 34px; margin: 3px 0 2px; }
-  .hr .ht { font-size: 19px; font-weight: 600; }
+  #wcHours { display: -webkit-flex; display: flex; margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .hr { -webkit-flex: 1; flex: 1; text-align: center; padding: 3px 0; border-radius: 10px; }
+  .hr .hl { font-size: 14px; color: var(--muted); }
+  .hr .hi { height: 30px; margin: 2px 0 1px; }
+  .hr .ht { font-size: 18px; font-weight: 600; }
   .hr.sun .hl { color: var(--accent); font-weight: 600; }
   .hr.now { background: var(--yellowsoft); }
   .hr.now .hl { color: var(--soon); font-weight: 700; }
-
-  #rainAlert { display: none; margin-top: 14px; background: var(--yellowsoft); border-radius: 14px;
-               padding: 12px 18px; font-size: 22px; font-weight: 500; color: var(--ink);
+  #rainAlert { display: none; margin-top: 10px; background: var(--yellowsoft); border-radius: 12px;
+               padding: 9px 16px; font-size: 19px; font-weight: 500; color: var(--ink);
                -webkit-align-items: center; align-items: center; }
   #rainAlert.show { display: -webkit-flex; display: flex; }
-  #rainAlert svg { width: 28px; height: 28px; -webkit-flex: none; flex: none; margin-right: 14px; }
+  #rainAlert svg { width: 24px; height: 24px; -webkit-flex: none; flex: none; margin-right: 12px; }
   #rainAlert svg path { fill: none; stroke: var(--soon); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-  /* bas : lumières à gauche, agenda à droite */
-  #lower { display: -webkit-flex; display: flex; margin: 14px 60px 0; }
-  #left { width: 470px; padding-right: 40px; }
-  #agenda { -webkit-flex: 1; flex: 1; border-left: 1px solid var(--line); padding-left: 40px; }
-  .secLbl { font-size: 18px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
-  .ev { display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--line); }
-  .evTime { width: 104px; font-size: 23px; font-weight: 600; color: var(--accent); -webkit-flex: none; flex: none; }
-  .evTitle { font-size: 23px; }
-  .evLoc { font-size: 16px; color: var(--muted); margin-top: 2px; }
-  #agNone { font-size: 25px; color: var(--muted); margin-top: 14px; line-height: 1.3; }
-
-  .room { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-bottom: 12px; }
-  .rIcon { width: 28px; height: 28px; -webkit-flex: none; flex: none; margin-right: 12px; }
-  .rIcon svg { width: 28px; height: 28px; display: block; }
-  .rName { -webkit-flex: 1; flex: 1; font-size: 24px; font-weight: 500; }
-  .btn { font-size: 19px; font-weight: 600; padding: 8px 20px; border-radius: 12px; margin-left: 9px;
-         border: 2px solid var(--line); color: var(--muted); background: transparent;
-         -webkit-user-select: none; user-select: none; cursor: pointer; min-width: 54px; text-align: center; }
-  .btn.on { border-color: var(--yellow); color: var(--accent); }
-  .btn.act { background: var(--yellow); color: #2e2b26; border-color: var(--yellow); }
-  .btn.offact { background: var(--line); color: var(--ink); border-color: var(--line); }
-  #scenes { margin-top: 14px; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; }
-  .scn { font-size: 18px; font-weight: 500; padding: 8px 16px; border-radius: 19px; margin: 0 9px 9px 0;
-         background: var(--panel); border: 1px solid var(--line); color: var(--ink);
-         -webkit-user-select: none; user-select: none; cursor: pointer; }
+  /* ---------- milieu : scènes | photos | agenda ---------- */
+  #mid { -webkit-flex: 1; flex: 1; display: -webkit-flex; display: flex; margin-top: 20px; min-height: 0; }
+  #scenes { width: 352px; -webkit-flex: none; flex: none; padding: 18px 20px; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
+  #scgrid { -webkit-flex: 1; flex: 1; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: -7px; }
+  .scn { width: calc(50% - 14px); -webkit-box-sizing: border-box; box-sizing: border-box; margin: 7px; background: var(--bg); border: 1px solid var(--line); border-radius: 18px;
+         display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+         font-size: 20px; font-weight: 600; color: var(--ink); -webkit-user-select: none; user-select: none; cursor: pointer; text-align: center; padding: 6px; }
   .scn.act { background: var(--yellow); border-color: var(--yellow); color: #2e2b26; }
 
-  /* 3 cases trajets du matin */
-  #trajetsLbl { position: absolute; left: 60px; bottom: 136px; font-size: 18px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; }
-  #trajets { position: absolute; left: 60px; right: 60px; bottom: 48px; display: -webkit-flex; display: flex; }
+  #photos { -webkit-flex: 1; flex: 1; margin: 0 20px; border-radius: 22px; overflow: hidden; position: relative; background: #14120e; }
+  .ph { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-position: center; background-repeat: no-repeat; background-size: cover;
+        opacity: 0; -webkit-transition: opacity 1.2s ease; transition: opacity 1.2s ease; }
+  .ph.on { opacity: 1; }
+  #phelp { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 22px;
+           display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
+           text-align: center; color: var(--faint); font-size: 16px; padding: 0 26px; line-height: 1.5; }
+  #phelp b { color: var(--accent); }
+
+  #agenda { width: 388px; -webkit-flex: none; flex: none; padding: 18px 22px; overflow: hidden; }
+  .agday { font-size: 18px; font-weight: 700; margin: 11px 0 3px; }
+  .agday.first { margin-top: 0; }
+  .agev { display: -webkit-flex; display: flex; -webkit-align-items: baseline; align-items: baseline; font-size: 15px; padding: 2px 0; }
+  .agev .dot { width: 4px; height: 22px; border-radius: 2px; background: var(--accent); margin-right: 9px; -webkit-flex: none; flex: none; -webkit-align-self: center; align-self: center; }
+  .agev .t { color: var(--muted); width: 62px; -webkit-flex: none; flex: none; }
+  .agnone { font-size: 14px; color: var(--faint); padding: 2px 0 2px 13px; }
+
+  /* ---------- bas : 3 trajets ---------- */
+  #trajets { -webkit-flex: none; flex: none; height: 128px; display: -webkit-flex; display: flex; margin-top: 20px; }
   .tc { -webkit-flex: 1; flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
-        padding: 14px 18px; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; min-width: 0; }
+        padding: 0 18px; display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; min-width: 0; }
   .tc + .tc { margin-left: 18px; }
   .tcIcon { width: 44px; height: 44px; border-radius: 13px; background: var(--yellowsoft); -webkit-flex: none; flex: none;
             display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; margin-right: 14px; }
@@ -96,62 +94,51 @@
   .tcName { font-size: 23px; font-weight: 700; line-height: 1; }
   .tcDest { font-size: 15px; color: var(--muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .tcRight { text-align: right; -webkit-flex: none; flex: none; margin-left: 10px; }
-  .tcArr { font-size: 40px; font-weight: 800; line-height: 1; }
+  .tcArr { font-size: 38px; font-weight: 800; line-height: 1; }
   .tcDep { font-size: 15px; color: var(--muted); margin-top: 4px; }
   .tcWarn { color: var(--soon); font-weight: 700; }
-
-  #foot { position: absolute; left: 60px; right: 60px; bottom: 14px; font-size: 13px; color: var(--faint2); }
-  #foot span { float: right; }
 </style>
 </head>
 <body>
 <div id="stage">
-  <div id="head">
-    <div id="date"><div id="dow"></div><div id="dnum"></div></div>
-    <div id="clock"></div>
+
+  <div id="top">
+    <div id="clockbox"><div id="clock"></div><div id="date"></div></div>
+    <div id="weather" class="panel">
+      <div id="wcTop">
+        <div id="wcLeft"><div id="wcCity">Levallois-Perret</div><div id="wcTemp"></div></div>
+        <div id="wcRight"><div id="wcCond"></div><div id="wcHL"></div></div>
+      </div>
+      <div id="wcHours"></div>
+      <div id="rainAlert"></div>
+    </div>
   </div>
 
-  <div id="wcard">
-    <div id="wcTop">
-      <div id="wcLeft"><div id="wcCity">Levallois-Perret</div><div id="wcTemp"></div></div>
-      <div id="wcRight"><div id="wcCond"></div><div id="wcHL"></div></div>
+  <div id="mid">
+    <div id="scenes" class="panel">
+      <div class="lbl">Scènes</div>
+      <div id="scgrid">
+        <div class="scn" onclick="scene('scene1',this)">Scène 1</div>
+        <div class="scn" onclick="scene('scene2',this)">Scène 2</div>
+        <div class="scn" onclick="scene('scene3',this)">Scène 3</div>
+        <div class="scn" onclick="scene('scene4',this)">Scène 4</div>
+      </div>
     </div>
-    <div id="wcHours"></div>
-    <div id="rainAlert"></div>
-  </div>
 
-  <div id="lower">
-    <div id="left">
-      <div class="secLbl">Lumières</div>
-      <div class="room">
-        <div class="rIcon"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 1 4 10.5c-.7.7-1 1.3-1 2.5H9c0-1.2-.3-1.8-1-2.5A6 6 0 0 1 12 3z" fill="none" stroke="#b7791f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="rName">Chambre</div>
-        <div class="btn on" onclick="light('chambre','on',this)">On</div>
-        <div class="btn" onclick="light('chambre','off',this)">Off</div>
-      </div>
-      <div class="room">
-        <div class="rIcon"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 1 4 10.5c-.7.7-1 1.3-1 2.5H9c0-1.2-.3-1.8-1-2.5A6 6 0 0 1 12 3z" fill="none" stroke="#b7791f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="rName">Salon</div>
-        <div class="btn on" onclick="light('salon','on',this)">On</div>
-        <div class="btn" onclick="light('salon','off',this)">Off</div>
-      </div>
-      <div id="scenes">
-        <div class="scn" onclick="scene('film',this)">Film</div>
-        <div class="scn" onclick="scene('nuit',this)">Bonne nuit</div>
-        <div class="scn" onclick="scene('reveil',this)">Réveil</div>
-        <div class="scn" onclick="scene('off',this)">Tout éteindre</div>
-      </div>
+    <div id="photos">
+      <div class="ph" id="ph0"></div>
+      <div class="ph" id="ph1"></div>
+      <div id="phelp">Ajoutez vos photos dans <b>photos.json</b><br>pour les faire défiler ici.</div>
     </div>
-    <div id="agenda">
-      <div class="secLbl">Au programme aujourd'hui</div>
+
+    <div id="agenda" class="panel">
+      <div class="lbl">Agenda</div>
       <div id="agList"></div>
     </div>
   </div>
 
-  <div id="trajetsLbl">Trajets · si vous partez maintenant</div>
   <div id="trajets"></div>
 
-  <div id="foot">Météo Open-Meteo · Levallois. Agenda Google. Trajets IDFM.<span id="src"></span></div>
 </div>
 
 <script>
@@ -186,21 +173,40 @@ function C(k) {
   return P[currentTheme()][k];
 }
 
-/* ---------- boutons lumière / scènes ---------- */
-function light(room, cmd, btn) {
-  var bs = btn.parentNode.getElementsByClassName("btn"), i;
-  for (i = 0; i < bs.length; i++) { bs[i].className = bs[i].className.replace(/\s*(act|offact)/g, ""); }
-  btn.className += (cmd === "on" ? " act" : " offact");
-  if (!LIGHT_URL) return;
-  try { var xhr = new XMLHttpRequest(); xhr.open("GET", LIGHT_URL + "?room=" + encodeURIComponent(room) + "&cmd=" + cmd); xhr.timeout = 8000; xhr.send(); } catch (e) {}
-}
+/* ---------- scènes ---------- */
 function scene(name, btn) {
-  var ss = document.getElementById("scenes").getElementsByClassName("scn"), i;
-  for (i = 0; i < ss.length; i++) { ss[i].className = ss[i].className.replace(/\s*act/g, ""); }
+  var ss = document.getElementById("scgrid").getElementsByClassName("scn"), i;
+  for (i = 0; i < ss.length; i++) ss[i].className = ss[i].className.replace(/\s*act/g, "");
   btn.className += " act";
   setTimeout(function () { btn.className = btn.className.replace(/\s*act/g, ""); }, 1500);
   if (!LIGHT_URL) return;
   try { var xhr = new XMLHttpRequest(); xhr.open("GET", LIGHT_URL + "?scene=" + encodeURIComponent(name)); xhr.timeout = 8000; xhr.send(); } catch (e) {}
+}
+
+/* ---------- photos (défilé, même source que la slide Photos) ---------- */
+var MANIFEST = "photos.json", HOLD_MS = 8000, PLIST = [], pidx = -1, player = 0, photosStarted = false;
+function psrc(n) { return (/^https?:\/\//.test(n)) ? n : ("photos/" + n); }
+function nextPhoto() {
+  if (!PLIST.length) return;
+  pidx = (pidx + 1) % PLIST.length;
+  var show = player ? "ph1" : "ph0", hide = player ? "ph0" : "ph1";
+  el(show).style.backgroundImage = 'url("' + psrc(PLIST[pidx]) + '")';
+  el(show).className = "ph on"; el(hide).className = "ph";
+  player = player ? 0 : 1;
+}
+function startPhotos(list) {
+  PLIST = list || [];
+  if (!PLIST.length) { el("phelp").style.display = "flex"; return; }
+  el("phelp").style.display = "none";
+  if (photosStarted) return; photosStarted = true;
+  nextPhoto(); setInterval(nextPhoto, HOLD_MS);
+}
+function loadPhotos() {
+  var x = new XMLHttpRequest(); x.open("GET", MANIFEST + "?t=" + Date.now()); x.timeout = 10000;
+  x.onload = function () { var list = []; if (x.status === 200) { try { var j = JSON.parse(x.responseText); if (j instanceof Array) list = j; else if (j && j.photos) list = j.photos; } catch (e) {} } startPhotos(list); };
+  x.onerror = function () { startPhotos([]); };
+  x.ontimeout = function () { startPhotos([]); };
+  x.send();
 }
 
 /* ---------- icônes météo ---------- */
@@ -257,10 +263,12 @@ function condText(code) {
 var WX = null, AG = null, TRJ = null, lastLoad = null;
 
 function mockAgenda() {
-  return { events: [
-    { time: "09:30", title: "Point équipe (visio)", loc: "" },
-    { time: "13:00", title: "Déjeuner avec Léa", loc: "Rue Rivay" },
-    { time: "19:00", title: "Sport", loc: "Salle Levallois" }
+  return { days: [
+    { label: "Aujourd'hui", events: [{ t: "en cours", title: "Restaurant" }] },
+    { label: "Demain", events: [] },
+    { label: "Mardi 17", events: [{ t: "09 h 00", title: "Inventaire Liberté" }] },
+    { label: "Jeudi 19", events: [{ t: "13 h 30", title: "Visio Touraine" }] },
+    { label: "Vendredi 20", events: [{ t: "20 h 00", title: "Concert Bigflo & Oli" }] }
   ] };
 }
 
@@ -278,14 +286,29 @@ function renderWeather() {
   var h = "", cols = WX.cols || [];
   for (var i = 0; i < cols.length; i++) {
     var col = cols[i], ic;
-    if (col.type === "sunset" || col.type === "sunrise") ic = sunsetIcon(34);
-    else if (col.night && col.code <= 2) ic = moonIcon(col.code, 34);
-    else ic = wIcon(col.code, 34);
+    if (col.type === "sunset" || col.type === "sunrise") ic = sunsetIcon(30);
+    else if (col.night && col.code <= 2) ic = moonIcon(col.code, 30);
+    else ic = wIcon(col.code, 30);
     var tt = (col.temp == null) ? "" : (Math.round(col.temp) + "°");
     var cls = "hr" + (col.type !== "hour" ? " sun" : "") + (col.now ? " now" : "");
     h += '<div class="' + cls + '"><div class="hl">' + col.label + '</div><div class="hi">' + ic + '</div><div class="ht">' + tt + '</div></div>';
   }
   el("wcHours").innerHTML = h;
+}
+
+function renderAgenda() {
+  var ag = AG || mockAgenda(), days = ag.days || [], h = "";
+  for (var i = 0; i < days.length; i++) {
+    var d = days[i];
+    h += '<div class="agday' + (i === 0 ? " first" : "") + '">' + d.label + '</div>';
+    if (d.events && d.events.length) {
+      for (var j = 0; j < d.events.length; j++) {
+        var e = d.events[j];
+        h += '<div class="agev"><span class="dot"></span>' + (e.t ? '<span class="t">' + e.t + '</span>' : '') + e.title + '</div>';
+      }
+    } else h += '<div class="agnone">Rien de prévu</div>';
+  }
+  el("agList").innerHTML = h;
 }
 
 function renderTrajets() {
@@ -306,27 +329,14 @@ function renderTrajets() {
 function render() {
   applyTheme();
   var now = new Date();
-  el("dow").innerHTML = JOURS[now.getDay()];
-  el("dnum").innerHTML = now.getDate() + " " + MOIS[now.getMonth()];
   el("clock").innerHTML = hhmm(now);
+  el("date").innerHTML = JOURS[now.getDay()] + " " + now.getDate() + " " + MOIS[now.getMonth()];
   renderWeather();
-
-  var ag = AG || { events: [] };
-  if (ag.events && ag.events.length) {
-    var hh = "", nmax = Math.min(ag.events.length, 4);
-    for (var i = 0; i < nmax; i++) {
-      var e = ag.events[i];
-      hh += '<div class="ev"><div class="evTime">' + (e.time || "journée") + '</div><div><div class="evTitle">' + e.title + '</div>' + (e.loc ? '<div class="evLoc">' + e.loc + '</div>' : '') + '</div></div>';
-    }
-    el("agList").innerHTML = hh;
-  } else { el("agList").innerHTML = '<div id="agNone">Rien de prévu aujourd\'hui.<br>Profitez-en !</div>'; }
-
+  renderAgenda();
   renderTrajets();
-  el("src").innerHTML = lastLoad ? "Maj " + hhmm(lastLoad) : "";
 }
 
-/* ---------- météo : courant + heures + coucher du soleil ---------- */
-/* Bande fixe de la journée : 6 h → minuit. */
+/* ---------- météo : courant + heures + coucher du soleil (6 h → minuit) ---------- */
 function buildCols(j) {
   var H = j.hourly, now = new Date(), i;
   function findHour(y, mo, da, hh) {
@@ -340,31 +350,25 @@ function buildCols(j) {
   var sr0 = (j.daily && j.daily.sunrise) ? new Date(j.daily.sunrise[0]).getTime() : 0;
   var ss0 = (j.daily && j.daily.sunset) ? new Date(j.daily.sunset[0]).getTime() : 0;
   function isNight(t) { return (sr0 && ss0) ? (t < sr0 || t >= ss0) : false; }
-  for (var hh = 6; hh <= 23; hh++) {
+  for (var hh = 6; hh <= 23; hh += 2) {
     idx = findHour(y, mo, da, hh); if (idx < 0) continue;
     d = new Date(H.time[idx]);
-    cols.push({ t: d.getTime(), label: hh + " h", code: H.weather_code[idx], temp: H.temperature_2m[idx], type: "hour",
+    cols.push({ t: d.getTime(), label: (now.getHours() === hh ? "Maint." : hh + " h"), code: H.weather_code[idx], temp: H.temperature_2m[idx], type: "hour",
                 now: (now.getHours() === hh), night: isNight(d.getTime()) });
   }
-  /* minuit (0 h du lendemain) */
   var tom = new Date(y, mo, da + 1);
   idx = findHour(tom.getFullYear(), tom.getMonth(), tom.getDate(), 0);
   if (idx >= 0) { d = new Date(H.time[idx]); cols.push({ t: d.getTime(), label: "minuit", code: H.weather_code[idx], temp: H.temperature_2m[idx], type: "hour", night: true }); }
   if (!cols.length) return cols;
-  /* coucher du soleil du jour, inséré dans la bande */
   if (j.daily && j.daily.sunset) {
     for (i = 0; i < j.daily.sunset.length; i++) {
       var ss = new Date(j.daily.sunset[i]).getTime();
-      if (ss >= cols[0].t && ss <= cols[cols.length - 1].t) {
-        cols.push({ t: ss, label: hhmm(new Date(ss)), temp: null, type: "sunset" });
-      }
+      if (ss >= cols[0].t && ss <= cols[cols.length - 1].t) cols.push({ t: ss, label: hhmm(new Date(ss)), temp: null, type: "sunset" });
     }
   }
   cols.sort(function (a, b) { return a.t - b.t; });
   return cols;
 }
-
-/* Alerte pluie : 1re heure à venir aujourd'hui avec pluie probable. */
 function computeRain(j) {
   var H = j.hourly, now = new Date(), y = now.getFullYear(), mo = now.getMonth(), da = now.getDate(), nowH = now.getHours();
   if (!H || !H.time) return null;
@@ -379,7 +383,6 @@ function computeRain(j) {
   }
   return null;
 }
-
 function loadWeather() {
   var url = "https://api.open-meteo.com/v1/forecast?latitude=" + LAT + "&longitude=" + LON +
     "&current=temperature_2m,apparent_temperature,weather_code,is_day,wind_speed_10m" +
@@ -415,6 +418,7 @@ window.onresize = fit; fit(); applyTheme();
 
 render();
 loadAll();
+loadPhotos();
 function tick() { render(); setTimeout(tick, 60000 - (Date.now() % 60000) + 50); }
 setTimeout(tick, 60000 - (Date.now() % 60000) + 50);
 setInterval(loadTrajets, 60000);
