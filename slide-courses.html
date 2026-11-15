@@ -29,7 +29,8 @@
   .colLbl { font-size: 22px; color: var(--faint); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
   .colLbl b { color: var(--accent); font-weight: 600; }
 
-  .item { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 11px 0; }
+  .item { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; padding: 12px 10px; margin: 0 -10px; border-radius: 12px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .item:active { background: var(--line); }
   .box { width: 26px; height: 26px; border-radius: 7px; border: 2px solid var(--ring); -webkit-flex: none; flex: none; margin-right: 18px; box-sizing: border-box; }
   .item.done .box { border-color: var(--accent); background: var(--accent); position: relative; }
   .item.done .box:after { content: ""; position: absolute; left: 7px; top: 2px; width: 6px; height: 12px;
@@ -46,7 +47,7 @@
 <div id="stage">
   <div id="head">
     <h1 id="title">Courses &amp; tâches</h1>
-    <div id="sub">Modifiable depuis l'app Rappels sur vos téléphones — le cadre se met à jour tout seul.</div>
+    <div id="sub">Touchez un article pour le cocher — ou modifiez depuis l'app « Nos listes » sur vos téléphones.</div>
   </div>
 
   <div id="body">
@@ -54,7 +55,7 @@
     <div class="col right"><div class="colLbl">Tâches <b id="tCount"></b></div><div id="taches"></div></div>
   </div>
 
-  <div id="foot">Listes partagées Rappels (iCloud).<span id="src"></span></div>
+  <div id="foot">Notre liste partagée.<span id="src"></span></div>
 </div>
 
 <script>
@@ -111,7 +112,8 @@ function renderList(id, items, countId) {
   if (!items || !items.length) { el(id).innerHTML = '<div class="empty">Rien pour l\'instant.</div>'; el(countId).innerHTML = ""; return; }
   for (var i = 0; i < items.length; i++) {
     if (!items[i].done) remaining++;
-    h += '<div class="item' + (items[i].done ? " done" : "") + '"><div class="box"></div><div class="txt">' + items[i].t + '</div></div>';
+    var oc = items[i].id ? ' onclick="toggleItem(\'' + items[i].id + '\')"' : '';
+    h += '<div class="item' + (items[i].done ? " done" : "") + '"' + oc + '><div class="box"></div><div class="txt">' + items[i].t + '</div></div>';
   }
   el(id).innerHTML = h;
   el(countId).innerHTML = remaining ? "· " + remaining + " à faire" : "· tout est fait";
@@ -129,7 +131,21 @@ function render() {
   el("src").innerHTML = lastLoad ? "Maj " + hhmm(lastLoad) : "Exemple";
 }
 
+/* tap sur un article au cadre -> coche/décoche (synchro avec les iPhones) */
+var busy = false;
+function toggleItem(id) {
+  if (!id || !DATA) return;
+  [DATA.courses, DATA.taches].forEach(function (L) { if (L) for (var i = 0; i < L.length; i++) if (L[i].id === id) L[i].done = !L[i].done; });
+  render();                                   /* retour visuel immédiat */
+  busy = true;
+  var x = new XMLHttpRequest(); x.open("GET", WORKER_URL + "/toggle?id=" + encodeURIComponent(id) + "&t_=" + Date.now()); x.timeout = 12000;
+  x.onload = function () { busy = false; try { var j = JSON.parse(x.responseText); if (j && (j.courses || j.taches)) { DATA = { courses: j.courses || [], taches: j.taches || [], hasTaches: j.hasTaches }; lastLoad = new Date(); render(); } } catch (e) {} };
+  x.onerror = x.ontimeout = function () { busy = false; };
+  x.send();
+}
+
 function load() {
+  if (busy) return;                           /* on ne recharge pas pendant qu'on coche */
   if (!WORKER_URL) { DATA = null; render(); return; }
   var xhr = new XMLHttpRequest();
   xhr.open("GET", WORKER_URL + "?t=" + Date.now());
@@ -139,7 +155,7 @@ function load() {
       try {
         var j = JSON.parse(xhr.responseText);
         if (j && (j.courses || j.taches)) {
-          DATA = { courses: j.courses || [], taches: j.taches || [] };
+          DATA = { courses: j.courses || [], taches: j.taches || [], hasTaches: j.hasTaches };
           lastLoad = new Date(); render();
         }
       } catch (e) {}
