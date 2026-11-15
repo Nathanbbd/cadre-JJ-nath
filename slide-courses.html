@@ -58,9 +58,9 @@
 </div>
 
 <script>
-/* Source = Worker "reminders-appart" qui lit les listes Rappels iCloud.
-   Réponse : { updated, courses:[{t,done}], taches:[{t,done}] }. Vide = exemple. */
-var WORKER_URL = "https://reminders-appart.boisbourdinnathande.workers.dev";
+/* Source = Worker "liste-appart" (notre liste à nous, stockée sur Cloudflare KV).
+   Réponse : { updated, courses:[{t,done}], taches:[{t,done}], hasTaches }. Vide = exemple. */
+var WORKER_URL = "https://liste-appart.boisbourdinnathande.workers.dev";
 var REFRESH_MIN = 2;
 var LAT = 48.8938, LON = 2.2870;
 
