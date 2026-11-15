@@ -39,6 +39,14 @@
   .item.done .txt { color: var(--done); text-decoration: line-through; }
   .empty { font-size: 26px; color: var(--muted); margin-top: 8px; }
 
+  .scrollbox { max-height: 486px; overflow: hidden; }
+  .scrollbtns { display: none; margin-top: 12px; }
+  .scrollbtns.on { display: -webkit-flex; display: flex; }
+  .scrollbtns button { -webkit-flex: 1; flex: 1; height: 56px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line);
+    color: var(--ink); font-size: 26px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .scrollbtns button + button { margin-left: 14px; }
+  .scrollbtns button:active { background: var(--line); }
+
   #foot { position: absolute; left: 56px; right: 56px; bottom: 14px; font-size: 13px; color: var(--faint2); }
   #foot span { float: right; }
 </style>
@@ -51,8 +59,14 @@
   </div>
 
   <div id="body">
-    <div class="col"><div class="colLbl">Courses <b id="cCount"></b></div><div id="courses"></div></div>
-    <div class="col right"><div class="colLbl">Tâches <b id="tCount"></b></div><div id="taches"></div></div>
+    <div class="col"><div class="colLbl">Courses <b id="cCount"></b></div>
+      <div class="scrollbox" id="courses"></div>
+      <div class="scrollbtns" id="sbC"><button onclick="scrollCol('courses',-1)">&#9650;</button><button onclick="scrollCol('courses',1)">&#9660;</button></div>
+    </div>
+    <div class="col right"><div class="colLbl">Tâches <b id="tCount"></b></div>
+      <div class="scrollbox" id="taches"></div>
+      <div class="scrollbtns" id="sbT"><button onclick="scrollCol('taches',-1)">&#9650;</button><button onclick="scrollCol('taches',1)">&#9660;</button></div>
+    </div>
   </div>
 
   <div id="foot">Notre liste partagée.<span id="src"></span></div>
@@ -133,6 +147,19 @@ function renderList(id, items, countId) {
   el(countId).innerHTML = remaining ? "· " + remaining + " à faire" : "· tout est fait";
 }
 
+/* défilement par boutons (le cadre tactile ne scrolle pas bien à la main) */
+function scrollCol(id, dir) {
+  var b = el(id); if (!b) return;
+  b.scrollTop += dir * 260;
+  updateScrollBtns();
+}
+function updateScrollBtns() {
+  [["courses", "sbC"], ["taches", "sbT"]].forEach(function (p) {
+    var box = el(p[0]), bar = el(p[1]); if (!box || !bar) return;
+    bar.className = "scrollbtns" + (box.scrollHeight > box.clientHeight + 4 ? " on" : "");
+  });
+}
+
 function render() {
   applyTheme();
   var d = DATA || mock();
@@ -143,6 +170,7 @@ function render() {
   renderList("courses", d.courses, "cCount");
   if (hasT) renderList("taches", d.taches, "tCount");
   el("src").innerHTML = lastLoad ? "Maj " + hhmm(lastLoad) : "Exemple";
+  updateScrollBtns();
 }
 
 /* tap sur un article au cadre -> coche/décoche (synchro avec les iPhones) */
