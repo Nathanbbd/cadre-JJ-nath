@@ -75,6 +75,8 @@
          display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
          font-size: 20px; font-weight: 600; color: var(--ink); -webkit-user-select: none; user-select: none; cursor: pointer; text-align: center; padding: 6px; }
   .scn.act { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .scn { -webkit-flex-direction: column; flex-direction: column; }
+  .scn .si { font-size: 26px; display: block; margin-bottom: 5px; line-height: 1; }
 
   #photos { -webkit-flex: 1; flex: 1; margin: 0 20px; border-radius: 22px; overflow: hidden; position: relative; background: #14120e; }
   .ph { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-position: center; background-repeat: no-repeat; background-size: cover;
@@ -133,10 +135,10 @@
     <div id="scenes" class="panel">
       <div class="lbl">Scènes</div>
       <div id="scgrid">
-        <div class="scn" onclick="scene('scene1',this)">Scène 1</div>
-        <div class="scn" onclick="scene('scene2',this)">Scène 2</div>
-        <div class="scn" onclick="scene('scene3',this)">Scène 3</div>
-        <div class="scn" onclick="scene('scene4',this)">Scène 4</div>
+        <div class="scn" onclick="scene('sdDdxobkwE0qkZ6A',this)"><span class="si">💡</span>Chambre</div>
+        <div class="scn" onclick="scene('0MctNzITCFo23LoQ',this)"><span class="si">🛌</span>Au lit</div>
+        <div class="scn" onclick="scene('wKALqmPfbhmwipqv',this)"><span class="si">🎬</span>Film salon</div>
+        <div class="scn" onclick="scene('Uc9s0It2LD7pImOm',this)"><span class="si">⏻</span>Éteindre</div>
       </div>
     </div>
 
@@ -215,7 +217,8 @@ function scene(name, btn) {
   btn.className += " act";
   setTimeout(function () { btn.className = btn.className.replace(/\s*act/g, ""); }, 1500);
   if (!LIGHT_URL) return;
-  try { var xhr = new XMLHttpRequest(); xhr.open("GET", LIGHT_URL + "?scene=" + encodeURIComponent(name)); xhr.timeout = 8000; xhr.send(); } catch (e) {}
+  /* name = scene_id Smart Life ; home Paris = 299064456 */
+  try { var xhr = new XMLHttpRequest(); xhr.open("GET", LIGHT_URL + "?runscene=" + encodeURIComponent(name) + "&home=299064456"); xhr.timeout = 8000; xhr.send(); } catch (e) {}
 }
 
 /* ---------- photos (défilé, même source que la slide Photos) ---------- */

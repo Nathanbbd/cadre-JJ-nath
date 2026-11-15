@@ -81,9 +81,10 @@
       <div class="btn" onclick="light('salon','off',this)">Off</div>
     </div>
     <div id="scenes">
-      <div class="scn" onclick="scene('film',this)">Film</div>
-      <div class="scn" onclick="scene('nuit',this)">Bonne nuit</div>
-      <div class="scn" onclick="scene('off',this)">Tout éteindre</div>
+      <div class="scn" onclick="scene('sdDdxobkwE0qkZ6A',this)">Chambre</div>
+      <div class="scn" onclick="scene('0MctNzITCFo23LoQ',this)">Au lit</div>
+      <div class="scn" onclick="scene('wKALqmPfbhmwipqv',this)">Film salon</div>
+      <div class="scn" onclick="scene('Uc9s0It2LD7pImOm',this)">Tout éteindre</div>
     </div>
   </div>
 
@@ -135,7 +136,8 @@ function scene(name, btn) {
   btn.className += " act";
   setTimeout(function () { btn.className = btn.className.replace(/\s*act/g, ""); }, 1500);
   if (!LIGHT_URL) return;
-  try { var x = new XMLHttpRequest(); x.open("GET", LIGHT_URL + "?scene=" + encodeURIComponent(name)); x.timeout = 8000; x.send(); } catch (e) {}
+  /* name = scene_id Smart Life ; home Paris = 299064456 */
+  try { var x = new XMLHttpRequest(); x.open("GET", LIGHT_URL + "?runscene=" + encodeURIComponent(name) + "&home=299064456"); x.timeout = 8000; x.send(); } catch (e) {}
 }
 
 /* ---------- données ---------- */
