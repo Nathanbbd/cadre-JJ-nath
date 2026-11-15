@@ -329,7 +329,7 @@ function buildDays(events) {
   for (var off = 0; off < 14 && n < 6; off++) {
     var d = new Date(today.getTime() + off * 86400000), evs = by[dstr(d)] || [];
     evs.sort(function (a, b) { return (a.min || 0) - (b.min || 0); });
-    if (off > 1 && !evs.length) continue;
+    if (off > 0 && !evs.length) continue;   /* aujourd'hui toujours ; ensuite seulement les jours avec événement */
     var label = off === 0 ? "Aujourd'hui" : off === 1 ? "Demain" : (cap(WDLONG[d.getDay()]) + " " + d.getDate());
     days.push({ label: label, events: evs.map(function (e) { return { t: frTime(e), title: e.title, who: e.who }; }) });
     n++;
