@@ -6,15 +6,19 @@
 <title>Chauffage</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* ===== JOUR (golden hour) ===== */
   :root {
-    --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192; --faint2:#bdb6a6;
-    --line:#e8e3d7; --yellow:#f2b600; --accent:#b7791f; --heat:#d1701a; --heatsoft:rgba(209,112,26,0.14);
-    --cool:#3366cc; --idle:#c9c2b2;
+    --bg: radial-gradient(1000px 820px at 85% 8%, rgba(255,165,95,0.48), rgba(0,0,0,0) 56%), linear-gradient(135deg,#d7466b 0%, #e8794f 55%, #f3b24a 100%);
+    --panel:rgba(255,255,255,0.15); --ink:#fff6ef; --muted:rgba(255,246,239,0.82); --faint:rgba(255,246,239,0.60); --faint2:rgba(255,246,239,0.45);
+    --line:rgba(255,255,255,0.28); --yellow:#ff4e8a; --accent:#ff4e8a; --heat:#ff7a3d; --heatsoft:rgba(255,122,61,0.18);
+    --cool:#8ec2ff; --idle:rgba(255,255,255,0.30);
   }
+  /* ===== NUIT (magenta night) ===== */
   :root[data-theme="dark"] {
-    --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a; --faint2:#6f685c;
-    --line:#332f27; --yellow:#f2b600; --accent:#f2b600; --heat:#e8954a; --heatsoft:rgba(232,149,74,0.16);
-    --cool:#6b9be8; --idle:#4a453b;
+    --bg: radial-gradient(1200px 720px at 72% 16%, rgba(255,70,150,0.38), rgba(0,0,0,0) 60%), radial-gradient(900px 620px at 14% 92%, rgba(255,120,40,0.28), rgba(0,0,0,0) 55%), linear-gradient(150deg,#2a0620 0%, #5c0f36 48%, #7a123f 100%);
+    --panel:rgba(255,80,150,0.12); --ink:#ffe9f3; --muted:rgba(255,220,235,0.82); --faint:rgba(255,210,230,0.55); --faint2:rgba(255,210,230,0.42);
+    --line:rgba(255,120,180,0.30); --yellow:#ff2d95; --accent:#ff2d95; --heat:#ff8a4a; --heatsoft:rgba(255,138,74,0.18);
+    --cool:#8ec2ff; --idle:rgba(255,255,255,0.22);
   }
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
   body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); -webkit-user-select: none; user-select: none; }
@@ -23,7 +27,7 @@
 
   #head { padding: 36px 60px 0; display: -webkit-flex; display: flex; -webkit-align-items: flex-end; align-items: flex-end; }
   #title { font-size: 48px; font-weight: 600; margin: 0; line-height: 1; }
-  #sub { font-size: 21px; color: var(--muted); margin-left: auto; text-align: right; max-width: 470px; line-height: 1.25; }
+  #sub { font-size: 21px; color: var(--muted); margin-left: auto; margin-right: 60px; text-align: right; max-width: 430px; line-height: 1.25; }
   #modes { display: -webkit-flex; display: flex; margin-left: 34px; position: relative; top: -4px; }
   .md { font-size: 20px; font-weight: 600; padding: 9px 18px; border-radius: 20px; border: 2px solid var(--line);
         color: var(--muted); margin-right: 10px; cursor: pointer; white-space: nowrap; }
@@ -37,21 +41,17 @@
           -webkit-align-items: center; align-items: center; padding: 22px 20px 20px; }
   .room + .room { margin-left: 28px; }
   .rName { font-size: 30px; font-weight: 600; }
-  .dial { position: relative; width: 300px; height: 252px; margin-top: 6px; }
+  .dial { position: relative; width: 330px; height: 280px; margin-top: 18px; }
   .dial svg { position: absolute; left: 0; top: 0; }
-  .center { position: absolute; left: 0; right: 0; top: 72px; text-align: center; }
-  .now { font-size: 80px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
+  .center { position: absolute; left: 0; right: 0; top: 86px; text-align: center; }
+  .now { font-size: 104px; font-weight: 700; line-height: 1; letter-spacing: -2px; }
   .now sup { font-size: 40px; font-weight: 600; vertical-align: top; position: relative; top: 8px; }
-  .sp { font-size: 18px; color: var(--muted); margin-top: 2px; }
+  .sp { font-size: 22px; color: var(--muted); margin-top: 6px; }
   .sp b { color: var(--ink); }
-  .prof { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
-          font-size: 18px; color: var(--muted); margin-top: 8px; min-height: 40px; }
-  .pb { font-size: 18px; font-weight: 600; color: var(--accent); padding: 6px 14px; margin-left: 12px; border-radius: 10px;
-        border: 2px solid var(--line); cursor: pointer; white-space: nowrap; }
   .status { font-size: 24px; font-weight: 600; margin-top: 4px; min-height: 30px; text-align: center; color: var(--muted); }
   .status.on { color: var(--heat); } .status.win { color: var(--cool); }
   .ctrls { display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; margin-top: auto; }
-  .rb { width: 70px; height: 70px; border-radius: 35px; border: 2px solid var(--line); background: var(--bg);
+  .rb { width: 70px; height: 70px; border-radius: 35px; border: 2px solid var(--line); background: var(--panel);
         font-size: 38px; line-height: 64px; text-align: center; color: var(--ink); cursor: pointer; }
   .rb.dis { opacity: .35; }
   .boost { height: 58px; line-height: 54px; padding: 0 26px; margin: 0 22px; border-radius: 29px; border: 2px solid var(--heat);
@@ -70,7 +70,12 @@
   #setup .box { position: absolute; left: 340px; top: 220px; width: 600px; background: var(--panel); border-radius: 20px; padding: 30px; }
   #setup h2 { margin: 0 0 8px; font-size: 30px; }
   #setup p { font-size: 18px; color: var(--muted); margin: 0 0 18px; }
-  #setup input { width: 100%; box-sizing: border-box; font-size: 24px; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--ink); }
+  #setup input { width: 100%; box-sizing: border-box; font-size: 24px; padding: 12px 14px; border-radius: 12px; border: 2px solid var(--line); background: rgba(255,255,255,0.15); color: var(--ink); }
+  #gearBtn { position: absolute; top: 24px; right: 30px; z-index: 40; width: 46px; height: 46px; border-radius: 50%;
+             background: var(--panel); border: 1px solid var(--line); display: -webkit-flex; display: flex;
+             -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; cursor: pointer; opacity: .85; }
+  #gearBtn svg { width: 24px; height: 24px; }
+  #gearBtn .ic { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
   #setup .row { display: -webkit-flex; display: flex; margin-top: 18px; }
   #setup .sb { -webkit-flex: 1; flex: 1; text-align: center; font-size: 22px; font-weight: 600; padding: 12px; border-radius: 12px; border: 2px solid var(--line); cursor: pointer; }
   #setup .sb + .sb { margin-left: 12px; }
@@ -79,6 +84,7 @@
 </head>
 <body>
 <div id="stage">
+  <div id="gearBtn" title="Réglages" onclick="try{parent.goSlideName('reglages')}catch(e){}"><svg viewBox="0 0 24 24"><circle class="ic" cx="12" cy="12" r="3.2"/><path class="ic" d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5 5l2.1 2.1M16.9 16.9 19 19M19 5l-2.1 2.1M7.1 16.9 5 19"/></svg></div>
   <div id="head">
     <h1 id="title">Chauffage</h1>
     <div id="modes"></div>
@@ -100,7 +106,7 @@ var WORKER = "https://tuya-appart.boisbourdinnathande.workers.dev";
 var REFRESH_S = 60;
 var ROOMS = [{ id: "salon", name: "Salon" }, { id: "chambre", name: "Chambre" }];   /* salon à gauche, chambre à droite */
 /* Vitesse de chauffe mesurée (min par °C) : plus lente au-delà de 20 °C (thermostat du radiateur à 7/8) */
-var RATE = { salon: 10, chambre: 11 }, HIGH = 20, HIGH_FACTOR = 1.7;
+var RATE = { salon: 10, chambre: 15 }, HIGH = 20, HIGH_FACTOR = 1.7;
 var PROFILES = { maison: "À la maison", nuit: "Nuit", absent: "Absent", vacances: "Vacances" };
 var TOKEN_KEY = "cadre_chauffage_token";
 
@@ -114,7 +120,21 @@ function dayShort(t) {
   return j + " à " + hhmm(t);
 }
 function token() { try { return localStorage.getItem(TOKEN_KEY) || ""; } catch (e) { return ""; } }
-function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
+function sunTimes(lat, lon) {
+  var rad = Math.PI/180, dayMs=86400000, J1970=2440588, J2000=2451545;
+  function toDays(dt){ return dt.valueOf()/dayMs-0.5+J1970-J2000; }
+  var d=toDays(new Date()), lw=rad*-lon, n=Math.round(d-0.0009-lw/(2*Math.PI));
+  var ds=0.0009+lw/(2*Math.PI)+n, M=rad*(357.5291+0.98560028*ds);
+  var L=M+rad*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M))+rad*102.9372+Math.PI;
+  var dec=Math.asin(Math.sin(rad*23.4397)*Math.sin(L));
+  var Jt=J2000+ds+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
+  var w0=Math.acos((Math.sin(rad*-0.833)-Math.sin(rad*lat)*Math.sin(dec))/(Math.cos(rad*lat)*Math.cos(dec)));
+  var Js=J2000+(0.0009+(w0+lw)/(2*Math.PI)+n)+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
+  function fromJ(j){ return new Date((j+0.5-J1970)*dayMs); }
+  return { rise: fromJ(Jt-(Js-Jt)).getTime(), set: fromJ(Js).getTime() };
+}
+function isNight(){ try{ var s=sunTimes(48.894,2.287),n=Date.now(); return n<s.rise||n>s.set; }catch(e){ var h=new Date().getHours(); return h<8||h>=19; } }
+function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || (isNight() ? "dark" : "light"); }
 function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
 
 /* ---------- appels au Worker ---------- */
@@ -176,17 +196,8 @@ function winRow(s) {
   return h + '<div class="wb x" data-room="' + s.id + '" data-act="wincancel">×</div></div>';
 }
 
-/* ---------- consigne manuelle ou mode forcé : « Revenir au profil », comme dans l'app ---------- */
-function profLine(s) {
-  if (!full) return '';
-  var back = '<div class="pb" data-room="' + s.id + '" data-act="back">Revenir au profil</div>';
-  if (s.mode && s.mode !== "auto") return '<div class="prof"><span>Mode forcé</span>' + back + '</div>';
-  if (s.manual) return '<div class="prof"><span>Consigne manuelle' + (s.manualUntil ? ' jusqu’à ' + hhmm(s.manualUntil) : '') + '</span>' + back + '</div>';
-  return '<div class="prof"></div>';
-}
-
 /* ---------- affichage ---------- */
-var C = 165, R = 116;   /* rayon réduit : l'arc ne remonte plus jusqu'au nom de la pièce */
+var C = 165, R = 140;
 function ang(v) { return 135 + (Math.max(14, Math.min(26, v)) - 14) / 12 * 270; }
 function pt(a) { var r = a * Math.PI / 180; return [C + R * Math.cos(r), 150 + R * Math.sin(r)]; }
 function arc(a1, a2) { if (a2 - a1 < 0.5) a2 = a1 + 0.5; var p = pt(a1), q = pt(a2);
@@ -195,13 +206,11 @@ function arc(a1, a2) { if (a2 - a1 < 0.5) a2 = a1 + 0.5; var p = pt(a1), q = pt(
 function statusOf(s) {
   if (!full) return ["", ""];
   if (s.window) return ["Fenêtre ouverte, coupé jusqu’à " + hhmm(s.window), "win"];
-  if (s.preheat && s.mode === "auto" && !s.boost)
-    return [s.preheat > Date.now() ? "Relance : " + s.setpoint + " °C pour " + hhmm(s.preheat) : "Arrivée prévue " + hhmm(s.preheat) + " : " + s.setpoint + " °C", s.heating ? "on" : ""];
   if (s.boost) { var e = boostEnd(s); return ["Boost jusqu’à " + hhmm(s.boost) + (e > Math.round(s.temp) ? ", ≈ " + e + " °C" : ""), "on"]; }
   if (s.mode === "confort") return ["Confort forcé", "on"];
   if (s.mode === "eco") return ["Eco forcé", ""];
   if (s.mode === "auto" && s.setpoint == null && pres && pres.profile === "vacances" && pres.until)
-    return [pres.returnAt && pres.until >= pres.returnAt ? "Hors-gel, relance auto avant " + dayShort(pres.returnAt) : "Hors-gel, relance " + dayShort(pres.until), "win"];
+    return ["Hors-gel, relance " + dayShort(pres.until), "win"];
   if (s.mode === "horsgel" || s.setpoint == null) return ["Chauffage coupé", "win"];
   if (s.heating) return ["Chauffe pour " + s.setpoint + " °C" + etaText(s), "on"];
   return ["Consigne tenue", ""];
@@ -214,7 +223,7 @@ function render(note) {
     var r = ROOMS[i], s = rooms[r.id] || { id: r.id }, temp = s.temp, sp = pending[r.id] != null ? pending[r.id] : s.setpoint;
     var col = s.heating || s.boost ? "var(--heat)" : (s.window || (full && sp == null) ? "var(--cool)" : "var(--idle)");
     var st = statusOf(s), auto = full && s.mode === "auto" && !s.window;
-    var svg = '<svg width="300" height="273" viewBox="0 0 330 300">';
+    var svg = '<svg width="330" height="300" viewBox="0 0 330 300">';
     for (var v = 14; v <= 26; v++) { var a = ang(v) * Math.PI / 180, r1 = R + 16, r2 = R + (v % 2 ? 20 : 24);
       svg += '<line x1="' + (C + r1 * Math.cos(a)) + '" y1="' + (150 + r1 * Math.sin(a)) + '" x2="' + (C + r2 * Math.cos(a)) + '" y2="' + (150 + r2 * Math.sin(a)) + '" stroke="var(--line)" stroke-width="2.5" stroke-linecap="round"/>'; }
     svg += '<path d="' + arc(135, 405) + '" fill="none" stroke="var(--line)" stroke-width="18" stroke-linecap="round"/>';
@@ -224,7 +233,7 @@ function render(note) {
     h += '<div class="room"><div class="rName">' + r.name + '</div><div class="dial">' + svg +
       '<div class="center"><div class="now">' + (temp == null ? "–" : Math.round(temp) + "<sup>°</sup>") + '</div>' +
       (full ? '<div class="sp">Consigne <b>' + (typeof sp === "number" ? sp + " °C" : "Hors-gel") + '</b></div>' : '') + '</div></div>' +
-      '<div class="status ' + st[1] + '">' + st[0] + '</div>' + profLine(s) +
+      '<div class="status ' + st[1] + '">' + st[0] + '</div>' +
       (full ? '<div class="ctrls">' +
         '<div class="rb' + (auto ? '' : ' dis') + '" data-room="' + r.id + '" data-act="minus">−</div>' +
         '<div class="boost' + (s.boost ? ' on' : '') + (s.window ? ' dis' : '') + '" data-room="' + r.id + '" data-act="boost">' + (s.boost ? "Arrêter le boost" : "Boost 30 min") + '</div>' +
@@ -264,7 +273,6 @@ el("rooms").onclick = function (e) {
   if (act === "boost") { call("POST", "/rooms/" + id, { boost: !s.boost }, function () { load(); }); return; }
   if (act === "winpick" || act === "wincancel") { winPick[id] = act === "winpick"; render(); return; }
   if (act === "win") { winPick[id] = false; call("POST", "/rooms/" + id, { window: Number(b.getAttribute("data-min")) }, function () { load(); }); return; }
-  if (act === "back") { delete pending[id]; call("POST", "/rooms/" + id, { mode: "auto" }, function () { load(); }); return; }
   if (act === "winclose") { call("POST", "/rooms/" + id, { window: false }, function () { load(); }); return; }
   var base = pending[id] != null ? pending[id] : (typeof s.setpoint === "number" ? s.setpoint : 19);
   pending[id] = Math.max(15, Math.min(25, base + (act === "plus" ? 1 : -1))); render();
