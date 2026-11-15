@@ -51,7 +51,7 @@
    Réponse : { updated, count, photos:[ "https://...", ... ] } */
 var MANIFEST = "https://photos-appart.boisbourdinnathande.workers.dev";
 var HOLD_MS = 11000;       /* durée d'affichage par photo */
-var RELOAD_MS = 2700000;   /* re-charge la liste toutes les 45 min (URLs iCloud expirent) */
+var RELOAD_MS = 1200000;   /* re-charge la liste toutes les 20 min (URLs iCloud expirent) */
 
 function el(id) { return document.getElementById(id); }
 function pad(n) { return n < 10 ? "0" + n : "" + n; }
@@ -60,18 +60,26 @@ var LIST = [], idx = -1, layer = 0, started = false;
 
 function srcOf(name) { return (/^https?:\/\//.test(name)) ? name : ("photos/" + name); }
 
+var errStreak = 0, photoTimer = null;
+function schedNext(ms) { if (photoTimer) clearTimeout(photoTimer); photoTimer = setTimeout(nextPhoto, ms); }
 function nextPhoto() {
-  if (!LIST.length) return;
+  if (!LIST.length) { schedNext(5000); return; }
   idx = (idx + 1) % LIST.length;
   var url = srcOf(LIST[idx]);
   var img = new Image();                        /* précharge : on n'affiche qu'une fois décodée */
   img.onload = function () {
+    errStreak = 0;
     var showId = layer ? "p1" : "p0", hideId = layer ? "p0" : "p1";
     el(showId).style.backgroundImage = 'url("' + url + '")';
     el(showId).className = "ph on"; el(hideId).className = "ph";
     layer = layer ? 0 : 1;
+    schedNext(HOLD_MS);
   };
-  img.onerror = function () {};
+  img.onerror = function () {                    /* image morte (lien expiré) : on saute vite */
+    errStreak++;
+    if (errStreak >= 10) { errStreak = 0; load(); schedNext(HOLD_MS); }  /* trop d'échecs -> on recharge la liste */
+    else schedNext(900);
+  };
   img.src = url;
 }
 
@@ -86,8 +94,7 @@ function start(list) {
   if (!LIST.length) { el("help").style.display = "flex"; return; }
   el("help").style.display = "none";
   if (started) return; started = true;
-  nextPhoto();
-  setInterval(nextPhoto, HOLD_MS);
+  nextPhoto();                             /* la boucle s'auto-planifie (schedNext) */
 }
 
 var tries = 0;

@@ -225,18 +225,25 @@ function scene(name, btn) {
 /* ---------- photos (défilé, même source que la slide Photos) ---------- */
 var MANIFEST = "https://photos-appart.boisbourdinnathande.workers.dev", HOLD_MS = 8000, PLIST = [], pidx = -1, player = 0, photosStarted = false;
 function psrc(n) { return (/^https?:\/\//.test(n)) ? n : ("photos/" + n); }
+var pErr = 0, pTimer = null;
+function pSched(ms) { if (pTimer) clearTimeout(pTimer); pTimer = setTimeout(nextPhoto, ms); }
 function nextPhoto() {
-  if (!PLIST.length) return;
+  if (!PLIST.length) { pSched(5000); return; }
   pidx = (pidx + 1) % PLIST.length;
   var url = psrc(PLIST[pidx]);
   var img = new Image();                        /* précharge : on n'affiche qu'une fois décodée */
   img.onload = function () {
+    pErr = 0;
     var show = player ? "ph1" : "ph0", hide = player ? "ph0" : "ph1";
     el(show).style.backgroundImage = 'url("' + url + '")';
     el(show).className = "ph on"; el(hide).className = "ph";
     player = player ? 0 : 1;
+    pSched(HOLD_MS);
   };
-  img.onerror = function () {};
+  img.onerror = function () {                    /* lien expiré : on saute vite, et on recharge si trop d'échecs */
+    pErr++;
+    if (pErr >= 10) { pErr = 0; loadPhotos(); pSched(HOLD_MS); } else pSched(900);
+  };
   img.src = url;
 }
 function startPhotos(list) {
@@ -244,7 +251,7 @@ function startPhotos(list) {
   if (!PLIST.length) { el("phelp").style.display = "flex"; return; }
   el("phelp").style.display = "none";
   if (photosStarted) return; photosStarted = true;
-  nextPhoto(); setInterval(nextPhoto, HOLD_MS);
+  nextPhoto();                                  /* la boucle s'auto-planifie */
 }
 var ptries = 0;
 function pRetry() { if (!photosStarted && ptries < 6) setTimeout(loadPhotos, 20000); }   /* Worker à froid : réessai rapide */
@@ -494,7 +501,7 @@ function tick() { render(); setTimeout(tick, 60000 - (Date.now() % 60000) + 50);
 setTimeout(tick, 60000 - (Date.now() % 60000) + 50);
 setInterval(loadTrajets, 60000);
 setInterval(loadAll, REFRESH_MIN * 60000);
-setInterval(loadPhotos, 2700000);   /* re-charge la liste photos toutes les 45 min (URLs iCloud expirent) */
+setInterval(loadPhotos, 1200000);   /* re-charge la liste photos toutes les 20 min (URLs iCloud expirent) */
 </script>
 </body>
 </html>
