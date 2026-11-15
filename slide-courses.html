@@ -46,7 +46,7 @@
 <div id="stage">
   <div id="head">
     <h1 id="title">Courses &amp; tâches</h1>
-    <div id="sub">Modifiable depuis l'appli Google Sheets sur vos téléphones — le cadre se met à jour tout seul.</div>
+    <div id="sub">Modifiable depuis l'app Rappels sur vos téléphones — le cadre se met à jour tout seul.</div>
   </div>
 
   <div id="body">
@@ -54,13 +54,13 @@
     <div class="col right"><div class="colLbl">Tâches <b id="tCount"></b></div><div id="taches"></div></div>
   </div>
 
-  <div id="foot">Liste partagée Google Sheets.<span id="src"></span></div>
+  <div id="foot">Listes partagées Rappels (iCloud).<span id="src"></span></div>
 </div>
 
 <script>
-/* CSV_URL = lien "Publier sur le web" du Google Sheet en CSV. Vide = exemple.
-   Colonnes attendues : Liste , Article , Fait   (Liste = Courses|Tâches ; Fait = x si coché) */
-var CSV_URL = "";
+/* Source = Worker "reminders-appart" qui lit les listes Rappels iCloud.
+   Réponse : { updated, courses:[{t,done}], taches:[{t,done}] }. Vide = exemple. */
+var WORKER_URL = "https://reminders-appart.boisbourdinnathande.workers.dev";
 var REFRESH_MIN = 2;
 var LAT = 48.8938, LON = 2.2870;
 
@@ -126,22 +126,18 @@ function render() {
 }
 
 function load() {
-  if (!CSV_URL) { DATA = null; render(); return; }
+  if (!WORKER_URL) { DATA = null; render(); return; }
   var xhr = new XMLHttpRequest();
-  xhr.open("GET", CSV_URL);
-  xhr.timeout = 12000;
+  xhr.open("GET", WORKER_URL + "?t=" + Date.now());
+  xhr.timeout = 20000;
   xhr.onload = function () {
     if (xhr.status === 200) {
       try {
-        var rows = parseCSV(xhr.responseText), out = { courses: [], taches: [] };
-        for (var i = 1; i < rows.length; i++) {
-          var liste = norm(rows[i][0]), article = (rows[i][1] || "").trim(), fait = norm(rows[i][2]);
-          if (!article) continue;
-          var done = (fait === "x" || fait === "oui" || fait === "true" || fait === "1" || fait === "fait");
-          if (liste.indexOf("tach") === 0 || liste.indexOf("tâch") === 0) out.taches.push({ t: article, done: done });
-          else out.courses.push({ t: article, done: done });
+        var j = JSON.parse(xhr.responseText);
+        if (j && (j.courses || j.taches)) {
+          DATA = { courses: j.courses || [], taches: j.taches || [] };
+          lastLoad = new Date(); render();
         }
-        DATA = out; lastLoad = new Date(); render();
       } catch (e) {}
     }
   };
