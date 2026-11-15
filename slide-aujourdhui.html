@@ -52,11 +52,11 @@
   .hr.sun .hl { color: var(--accent); font-weight: 600; }
   .hr.now { background: var(--yellowsoft); }
   .hr.now .hl { color: var(--soon); font-weight: 700; }
-  #rainAlert { display: none; margin-top: 10px; background: var(--yellowsoft); border-radius: 12px;
-               padding: 9px 16px; font-size: 19px; font-weight: 500; color: var(--ink);
+  #rainAlert { display: none; margin: 8px 0 4px; background: var(--yellowsoft); border-radius: 20px;
+               padding: 6px 14px 6px 10px; font-size: 16px; font-weight: 600; color: var(--ink);
                -webkit-align-items: center; align-items: center; }
-  #rainAlert.show { display: -webkit-flex; display: flex; }
-  #rainAlert svg { width: 24px; height: 24px; -webkit-flex: none; flex: none; margin-right: 12px; }
+  #rainAlert.show { display: -webkit-inline-flex; display: inline-flex; }
+  #rainAlert svg { width: 19px; height: 19px; -webkit-flex: none; flex: none; margin-right: 8px; }
   #rainAlert svg path { fill: none; stroke: var(--soon); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ---------- milieu : scènes | photos | agenda ---------- */
@@ -113,11 +113,10 @@
     </div>
     <div id="weather" class="panel">
       <div id="wcTop">
-        <div id="wcLeft"><div id="wcCity">Levallois-Perret</div><div id="wcTemp"></div></div>
+        <div id="wcLeft"><div id="wcCity">Levallois-Perret</div><div id="rainAlert"></div><div id="wcTemp"></div></div>
         <div id="wcRight"><div id="wcCond"></div><div id="wcHL"></div></div>
       </div>
       <div id="wcHours"></div>
-      <div id="rainAlert"></div>
     </div>
   </div>
 
