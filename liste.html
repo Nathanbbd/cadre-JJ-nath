@@ -90,23 +90,16 @@ var WORKER = "https://liste-appart.boisbourdinnathande.workers.dev";
 var tab = "courses", DATA = { courses: [], taches: [], hasTaches: true }, typing = false, busy = false;
 
 function el(id){ return document.getElementById(id); }
-function pin(){ try { return localStorage.getItem("listePin") || ""; } catch(e){ return ""; } }
-function setPin(v){ try { localStorage.setItem("listePin", v); } catch(e){} }
 
 function api(path, cb){
-  var url = WORKER + path + (path.indexOf("?")<0?"?":"&") + "pin=" + encodeURIComponent(pin()) + "&t_=" + Date.now();
+  var url = WORKER + path + (path.indexOf("?")<0?"?":"&") + "t_=" + Date.now();
   var x = new XMLHttpRequest(); x.open("GET", url); x.timeout = 15000;
   x.onload = function(){
-    if (x.status === 401){ askPin(); return; }
     try { var j = JSON.parse(x.responseText); if (j && j.courses){ DATA = j; render(); } } catch(e){}
     if (cb) cb();
   };
   x.onerror = x.ontimeout = function(){ setSync("hors ligne"); };
   x.send();
-}
-function askPin(){
-  var p = prompt("Code pour modifier la liste :", "");
-  if (p != null){ setPin(p.trim()); }
 }
 
 function load(){ if (!busy) api("/"); }
