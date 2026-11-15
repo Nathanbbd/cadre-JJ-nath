@@ -34,7 +34,7 @@
   #gear svg { width: 26px; height: 26px; }
   #gear .ic { fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-  #weather { -webkit-flex: 1; flex: 1; margin-left: 24px; padding: 16px 24px; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
+  #weather { position: relative; -webkit-flex: 1; flex: 1; margin-left: 24px; padding: 16px 24px; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
   #wcTop { display: -webkit-flex; display: flex; -webkit-align-items: flex-start; align-items: flex-start; }
   #wcLeft { -webkit-flex: 1; flex: 1; }
   #wcCity { font-size: 20px; font-weight: 600; color: var(--muted); }
@@ -52,8 +52,9 @@
   .hr.sun .hl { color: var(--accent); font-weight: 600; }
   .hr.now { background: var(--yellowsoft); }
   .hr.now .hl { color: var(--soon); font-weight: 700; }
-  #rainAlert { display: none; margin: 8px 0 4px; background: var(--yellowsoft); border-radius: 20px;
-               padding: 6px 14px 6px 10px; font-size: 16px; font-weight: 600; color: var(--ink);
+  #rainAlert { display: none; position: absolute; top: 20px; left: 50%; -webkit-transform: translateX(-50%); transform: translateX(-50%);
+               z-index: 3; background: var(--yellowsoft); border-radius: 20px; white-space: nowrap;
+               padding: 7px 16px 7px 12px; font-size: 16px; font-weight: 600; color: var(--ink);
                -webkit-align-items: center; align-items: center; }
   #rainAlert.show { display: -webkit-inline-flex; display: inline-flex; }
   #rainAlert svg { width: 19px; height: 19px; -webkit-flex: none; flex: none; margin-right: 8px; }
@@ -113,9 +114,10 @@
     </div>
     <div id="weather" class="panel">
       <div id="wcTop">
-        <div id="wcLeft"><div id="wcCity">Levallois-Perret</div><div id="rainAlert"></div><div id="wcTemp"></div></div>
+        <div id="wcLeft"><div id="wcCity">Levallois-Perret</div><div id="wcTemp"></div></div>
         <div id="wcRight"><div id="wcCond"></div><div id="wcHL"></div></div>
       </div>
+      <div id="rainAlert"></div>
       <div id="wcHours"></div>
     </div>
   </div>
