@@ -210,11 +210,14 @@ function startPhotos(list) {
   if (photosStarted) return; photosStarted = true;
   nextPhoto(); setInterval(nextPhoto, HOLD_MS);
 }
+var ptries = 0;
+function pRetry() { if (!photosStarted && ptries < 6) setTimeout(loadPhotos, 20000); }   /* Worker à froid : réessai rapide */
 function loadPhotos() {
-  var x = new XMLHttpRequest(); x.open("GET", MANIFEST + "?t=" + Date.now()); x.timeout = 10000;
-  x.onload = function () { var list = []; if (x.status === 200) { try { var j = JSON.parse(x.responseText); if (j instanceof Array) list = j; else if (j && j.photos) list = j.photos; } catch (e) {} } startPhotos(list); };
-  x.onerror = function () { startPhotos([]); };
-  x.ontimeout = function () { startPhotos([]); };
+  ptries++;
+  var x = new XMLHttpRequest(); x.open("GET", MANIFEST + "?t=" + Date.now()); x.timeout = 60000;
+  x.onload = function () { var list = []; if (x.status === 200) { try { var j = JSON.parse(x.responseText); if (j instanceof Array) list = j; else if (j && j.photos) list = j.photos; } catch (e) {} } startPhotos(list); if (!list.length) pRetry(); };
+  x.onerror = function () { startPhotos([]); pRetry(); };
+  x.ontimeout = function () { startPhotos([]); pRetry(); };
   x.send();
 }
 
