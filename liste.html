@@ -79,6 +79,18 @@
   .iadd .p { flex:none; color:var(--accent); font-size:22px; margin-right:11px; }
   .iadd input { flex:1; border:0; background:transparent; font:inherit; font-size:17px; color:var(--ink); padding:9px 0; outline:none; -webkit-user-select:auto; user-select:auto; }
   .iadd input::placeholder { color:var(--faint); }
+
+  /* section « tous les ingrédients » + envoi */
+  .aggsec { background:var(--card); border-radius:16px; margin-top:20px; padding:4px 16px 10px; }
+  .aggsec .mlabel { margin:13px 2px 4px; }
+  .ck2 { width:26px; height:26px; border-radius:50%; border:2px solid var(--faint); flex:none; margin-right:14px; position:relative; cursor:pointer; }
+  .ck2.on { background:var(--accent); border-color:var(--accent); }
+  .ck2.on:after { content:""; position:absolute; left:9px; top:4px; width:6px; height:11px; border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(45deg); }
+  .it.off { color:var(--done); text-decoration:line-through; }
+  .sendbtn { display:block; width:100%; margin:14px 0 4px; border:0; border-radius:14px; background:var(--accent); color:#fff;
+    font:inherit; font-size:18px; font-weight:700; padding:16px 0; cursor:pointer; }
+  .sendbtn:active { opacity:.85; }
+  .sendbtn:disabled { background:var(--line); color:var(--faint); }
 </style>
 </head>
 <body>
@@ -111,6 +123,7 @@ var tab = "courses", DATA = { courses: [], taches: [], hasTaches: true, menu: {}
 var DAYS = ["lun","mar","mer","jeu","ven","sam","dim"];
 var DAYNAMES = { lun:"Lundi", mar:"Mardi", mer:"Mercredi", jeu:"Jeudi", ven:"Vendredi", sam:"Samedi", dim:"Dimanche" };
 var openDay = DAYS[(new Date().getDay()+6)%7];   /* ouvre le jour d'aujourd'hui */
+var menuExclude = {};   /* ingrédients décochés (ne seront pas envoyés) */
 
 function el(id){ return document.getElementById(id); }
 
@@ -181,7 +194,33 @@ function renderMenu(){
     }
     h += '</div>';
   }
+  /* --- tous les ingrédients de la semaine (uniques) + envoi vers les courses --- */
+  var agg = aggIngredients(), sel = 0;
+  if (agg.length){
+    h += '<div class="aggsec"><div class="mlabel">Tous les ingrédients</div>';
+    for (var a=0;a<agg.length;a++){
+      var name = agg[a], excl = !!menuExclude[name.toLowerCase()]; if (!excl) sel++;
+      h += '<div class="ingr"><div class="ck2'+(excl?'':' on')+'" onclick="toggleExcl(\''+escAttr(name).replace(/\\/g,"\\\\").replace(/'/g,"\\'")+'\')"></div>'
+         + '<div class="it'+(excl?' off':'')+'">'+esc(name)+'</div></div>';
+    }
+    h += '</div>';
+    h += '<button class="sendbtn" id="sendBtn"'+(sel?'':' disabled')+' onclick="sendMenu()">Envoyer dans les courses'+(sel?' ('+sel+')':'')+'</button>';
+  }
   el("list").innerHTML = h;
+}
+function aggIngredients(){
+  var seen = {}, out = [];
+  for (var i=0;i<DAYS.length;i++){ var ing = mday(DAYS[i]).ingr; for (var j=0;j<ing.length;j++){ var t=(ing[j].t||"").trim(), key=t.toLowerCase(); if (t && !seen[key]){ seen[key]=true; out.push(t); } } }
+  return out;
+}
+function toggleExcl(name){ var k=name.toLowerCase(); menuExclude[k] = !menuExclude[k]; render(); }
+function sendMenu(){
+  var agg = aggIngredients(), items = agg.filter(function(n){ return !menuExclude[n.toLowerCase()]; });
+  if (!items.length) return;
+  var existing = {}; DATA.courses.forEach(function(x){ existing[x.t.toLowerCase()] = true; });
+  items.forEach(function(t){ if (!existing[t.toLowerCase()]){ DATA.courses.push({ id:"tmp"+Date.now()+Math.random(), t:t, done:false }); } });
+  render(); setSync("Ajouté aux courses ✓");
+  busy=true; api("/addMany?list=courses&items="+encodeURIComponent(items.join("\n")), function(){ busy=false; });
 }
 function toggleDay(k){ openDay = (openDay===k) ? null : k; render(); }
 function savePlat(k){
