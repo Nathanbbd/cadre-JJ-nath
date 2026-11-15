@@ -199,10 +199,16 @@ function psrc(n) { return (/^https?:\/\//.test(n)) ? n : ("photos/" + n); }
 function nextPhoto() {
   if (!PLIST.length) return;
   pidx = (pidx + 1) % PLIST.length;
-  var show = player ? "ph1" : "ph0", hide = player ? "ph0" : "ph1";
-  el(show).style.backgroundImage = 'url("' + psrc(PLIST[pidx]) + '")';
-  el(show).className = "ph on"; el(hide).className = "ph";
-  player = player ? 0 : 1;
+  var url = psrc(PLIST[pidx]);
+  var img = new Image();                        /* précharge : on n'affiche qu'une fois décodée */
+  img.onload = function () {
+    var show = player ? "ph1" : "ph0", hide = player ? "ph0" : "ph1";
+    el(show).style.backgroundImage = 'url("' + url + '")';
+    el(show).className = "ph on"; el(hide).className = "ph";
+    player = player ? 0 : 1;
+  };
+  img.onerror = function () {};
+  img.src = url;
 }
 function startPhotos(list) {
   if (list && list.length) PLIST = list;        /* MAJ de la liste (URLs iCloud rafraîchies) */
@@ -215,7 +221,7 @@ var ptries = 0;
 function pRetry() { if (!photosStarted && ptries < 6) setTimeout(loadPhotos, 20000); }   /* Worker à froid : réessai rapide */
 function loadPhotos() {
   ptries++;
-  var x = new XMLHttpRequest(); x.open("GET", MANIFEST + "?t=" + Date.now()); x.timeout = 60000;
+  var x = new XMLHttpRequest(); x.open("GET", MANIFEST + (MANIFEST.indexOf("?") < 0 ? "?" : "&") + "size=small&t=" + Date.now()); x.timeout = 60000;
   x.onload = function () { var list = []; if (x.status === 200) { try { var j = JSON.parse(x.responseText); if (j instanceof Array) list = j; else if (j && j.photos) list = j.photos; } catch (e) {} } startPhotos(list); if (!list.length) pRetry(); };
   x.onerror = function () { startPhotos([]); pRetry(); };
   x.ontimeout = function () { startPhotos([]); pRetry(); };

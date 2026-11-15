@@ -50,7 +50,7 @@
 /* Source = Worker "photos-appart" qui lit l'album partagé iCloud.
    Réponse : { updated, count, photos:[ "https://...", ... ] } */
 var MANIFEST = "https://photos-appart.boisbourdinnathande.workers.dev";
-var HOLD_MS = 8000;        /* durée d'affichage par photo */
+var HOLD_MS = 11000;       /* durée d'affichage par photo */
 var RELOAD_MS = 2700000;   /* re-charge la liste toutes les 45 min (URLs iCloud expirent) */
 
 function el(id) { return document.getElementById(id); }
@@ -63,10 +63,16 @@ function srcOf(name) { return (/^https?:\/\//.test(name)) ? name : ("photos/" + 
 function nextPhoto() {
   if (!LIST.length) return;
   idx = (idx + 1) % LIST.length;
-  var showId = layer ? "p1" : "p0", hideId = layer ? "p0" : "p1";
-  el(showId).style.backgroundImage = 'url("' + srcOf(LIST[idx]) + '")';
-  el(showId).className = "ph on"; el(hideId).className = "ph";
-  layer = layer ? 0 : 1;
+  var url = srcOf(LIST[idx]);
+  var img = new Image();                        /* précharge : on n'affiche qu'une fois décodée */
+  img.onload = function () {
+    var showId = layer ? "p1" : "p0", hideId = layer ? "p0" : "p1";
+    el(showId).style.backgroundImage = 'url("' + url + '")';
+    el(showId).className = "ph on"; el(hideId).className = "ph";
+    layer = layer ? 0 : 1;
+  };
+  img.onerror = function () {};
+  img.src = url;
 }
 
 function clock() {
