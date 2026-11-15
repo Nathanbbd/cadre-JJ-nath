@@ -7,16 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192;
-    --faint2:#bdb6a6; --line:#e8e3d7; --yellow:#f2b600; --yellowsoft:rgba(242,182,0,0.16);
-    --accent:#b7791f; --grid:#e8e3d7;
-    --ext:#3366cc; --cha:#d1701a; --sal:#8a4fbf;
+    --bg: radial-gradient(1000px 820px at 85% 8%, rgba(255,165,95,0.48), rgba(0,0,0,0) 56%), linear-gradient(135deg,#d7466b 0%, #e8794f 55%, #f3b24a 100%); --panel:rgba(255,255,255,0.15); --ink:#fff6ef; --muted:rgba(255,246,239,0.82); --faint:rgba(255,246,239,0.60);
+    --faint2:rgba(255,246,239,0.45); --line:rgba(255,255,255,0.28); --yellow:#ff4e8a; --yellowsoft:rgba(255,255,255,0.15);
+    --accent:#ff4e8a; --grid:rgba(255,255,255,0.28);
+    --ext:#8ec2ff; --cha:#ffa94e; --sal:#e8a6ff;
   }
   :root[data-theme="dark"] {
-    --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a;
-    --faint2:#6f685c; --line:#332f27; --yellow:#f2b600; --yellowsoft:rgba(242,182,0,0.18);
-    --accent:#f2b600; --grid:#2c2922;
-    --ext:#6b9be8; --cha:#e8954a; --sal:#b98ae0;
+    --bg: radial-gradient(1200px 720px at 72% 16%, rgba(255,70,150,0.38), rgba(0,0,0,0) 60%), radial-gradient(900px 620px at 14% 92%, rgba(255,120,40,0.28), rgba(0,0,0,0) 55%), linear-gradient(150deg,#2a0620 0%, #5c0f36 48%, #7a123f 100%); --panel:rgba(255,80,150,0.12); --ink:#ffe9f3; --muted:rgba(255,220,235,0.82); --faint:rgba(255,210,230,0.55);
+    --faint2:rgba(255,210,230,0.42); --line:rgba(255,120,180,0.30); --yellow:#ff2d95; --yellowsoft:rgba(255,80,150,0.16);
+    --accent:#ff2d95; --grid:rgba(255,120,180,0.30);
+    --ext:#8ec2ff; --cha:#ffa94e; --sal:#e8a6ff;
   }
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
   body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
@@ -103,7 +103,21 @@ function el(id) { return document.getElementById(id); }
 function pad(n) { return n < 10 ? "0" + n : "" + n; }
 function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
 
-function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
+function sunTimes(lat, lon) {
+  var rad = Math.PI/180, dayMs=86400000, J1970=2440588, J2000=2451545;
+  function toDays(dt){ return dt.valueOf()/dayMs-0.5+J1970-J2000; }
+  var d=toDays(new Date()), lw=rad*-lon, n=Math.round(d-0.0009-lw/(2*Math.PI));
+  var ds=0.0009+lw/(2*Math.PI)+n, M=rad*(357.5291+0.98560028*ds);
+  var L=M+rad*(1.9148*Math.sin(M)+0.02*Math.sin(2*M)+0.0003*Math.sin(3*M))+rad*102.9372+Math.PI;
+  var dec=Math.asin(Math.sin(rad*23.4397)*Math.sin(L));
+  var Jt=J2000+ds+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
+  var w0=Math.acos((Math.sin(rad*-0.833)-Math.sin(rad*lat)*Math.sin(dec))/(Math.cos(rad*lat)*Math.cos(dec)));
+  var Js=J2000+(0.0009+(w0+lw)/(2*Math.PI)+n)+0.0053*Math.sin(M)-0.0069*Math.sin(2*L);
+  function fromJ(j){ return new Date((j+0.5-J1970)*dayMs); }
+  return { rise: fromJ(Jt-(Js-Jt)).getTime(), set: fromJ(Js).getTime() };
+}
+function isNight(){ try{ var s=sunTimes(48.894,2.287),n=Date.now(); return n<s.rise||n>s.set; }catch(e){ var h=new Date().getHours(); return h<8||h>=19; } }
+function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || (isNight() ? "dark" : "light"); }
 function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
 function cssVar(name) { try { return getComputedStyle(document.documentElement).getPropertyValue(name).replace(/\s/g, "") || "#888"; } catch (e) { return "#888"; } }
 

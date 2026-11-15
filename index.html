@@ -7,13 +7,14 @@
 <style>
   /* Shell. Nav verticale à GAUCHE. Palette crème + jaune, claire par défaut.
      Compatible WebView Android 6 / Chrome 106. */
+  /* barre de nav : verre sombre rosé, cohérent jour comme nuit */
   :root {
-    --shellbg:#f4f1ea; --navbg:#fbfaf6; --navsep:rgba(40,36,30,0.08);
-    --navic:#8d877b; --navactive:#f2b600; --navactiveic:#2e2b26; --prog:#f2b600;
+    --shellbg:#2a0620; --navbg:rgba(18,4,14,0.45); --navsep:rgba(255,255,255,0.10);
+    --navic:rgba(255,235,245,0.75); --navactive:#ff2d95; --navactiveic:#ffffff; --prog:#ff2d95;
   }
   :root[data-theme="dark"] {
-    --shellbg:#1b1a16; --navbg:#201e19; --navsep:rgba(255,255,255,0.08);
-    --navic:#b3ab99; --navactive:#f2b600; --navactiveic:#201e19; --prog:#f2b600;
+    --shellbg:#2a0620; --navbg:rgba(18,4,14,0.5); --navsep:rgba(255,255,255,0.10);
+    --navic:rgba(255,235,245,0.75); --navactive:#ff2d95; --navactiveic:#ffffff; --prog:#ff2d95;
   }
   html, body { margin: 0; height: 100%; background: var(--shellbg); overflow: hidden; }
   body { font-family: "Roboto", "Helvetica Neue", Arial, sans-serif;

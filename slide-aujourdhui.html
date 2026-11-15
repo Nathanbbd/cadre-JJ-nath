@@ -6,15 +6,22 @@
 <title>Aujourd'hui</title>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ===== JOUR (golden hour) ===== */
   :root {
-    --bg:#f4f1ea; --panel:#fbfaf6; --ink:#2e2b26; --muted:#8d877b; --faint:#a8a192;
-    --faint2:#bdb6a6; --line:#e8e3d7; --yellow:#f2b600; --yellowsoft:rgba(242,182,0,0.16);
-    --accent:#b7791f; --soon:#d98324; --nathan:#5a8f3f; --gigi:#8a4fbf; --nous:#3b6fb5;
+    --bg: radial-gradient(1000px 820px at 85% 8%, rgba(255,165,95,0.48), rgba(0,0,0,0) 56%),
+          linear-gradient(135deg,#d7466b 0%, #e8794f 55%, #f3b24a 100%);
+    --panel: rgba(255,255,255,0.15); --ink:#fff6ef; --muted:rgba(255,246,239,0.82); --faint:rgba(255,246,239,0.60);
+    --faint2:rgba(255,246,239,0.45); --line:rgba(255,255,255,0.28); --yellow:#ff4e8a; --yellowsoft:rgba(255,255,255,0.15);
+    --accent:#ff4e8a; --soon:#ff4e8a; --nathan:#6fe59a; --gigi:#e8a6ff; --nous:#8ec2ff;
   }
+  /* ===== NUIT (magenta night) ===== */
   :root[data-theme="dark"] {
-    --bg:#1b1a16; --panel:#201e19; --ink:#f2ede1; --muted:#b3ab99; --faint:#8f887a;
-    --faint2:#6f685c; --line:#332f27; --yellow:#f2b600; --yellowsoft:rgba(242,182,0,0.18);
-    --accent:#f2b600; --soon:#f0a24a; --nathan:#7cc45f; --gigi:#b483e0; --nous:#6b9be8;
+    --bg: radial-gradient(1200px 720px at 72% 16%, rgba(255,70,150,0.38), rgba(0,0,0,0) 60%),
+          radial-gradient(900px 620px at 14% 92%, rgba(255,120,40,0.28), rgba(0,0,0,0) 55%),
+          linear-gradient(150deg,#2a0620 0%, #5c0f36 48%, #7a123f 100%);
+    --panel: rgba(255,80,150,0.12); --ink:#ffe9f3; --muted:rgba(255,220,235,0.82); --faint:rgba(255,210,230,0.55);
+    --faint2:rgba(255,210,230,0.42); --line:rgba(255,120,180,0.30); --yellow:#ff2d95; --yellowsoft:rgba(255,80,150,0.16);
+    --accent:#ff2d95; --soon:#ff2d95; --nathan:#6fe59a; --gigi:#e8a6ff; --nous:#8ec2ff;
   }
   html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; }
   body { font-family: "Barlow", "Roboto", "Helvetica Neue", Arial, sans-serif; color: var(--ink); }
@@ -53,21 +60,21 @@
   .hr.now { background: var(--yellowsoft); }
   .hr.now .hl { color: var(--soon); font-weight: 700; }
   #rainAlert { display: none; position: absolute; top: 20px; left: 50%; -webkit-transform: translateX(-50%); transform: translateX(-50%);
-               z-index: 3; background: var(--yellowsoft); border-radius: 20px; white-space: nowrap;
-               padding: 7px 16px 7px 12px; font-size: 16px; font-weight: 600; color: var(--ink);
-               -webkit-align-items: center; align-items: center; }
+               z-index: 3; background: var(--accent); border-radius: 20px; white-space: nowrap;
+               padding: 7px 16px 7px 12px; font-size: 16px; font-weight: 700; color: #fff;
+               box-shadow: 0 6px 18px rgba(0,0,0,0.22); -webkit-align-items: center; align-items: center; }
   #rainAlert.show { display: -webkit-inline-flex; display: inline-flex; }
   #rainAlert svg { width: 19px; height: 19px; -webkit-flex: none; flex: none; margin-right: 8px; }
-  #rainAlert svg path { fill: none; stroke: var(--soon); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  #rainAlert svg path { fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
   /* ---------- milieu : scènes | photos | agenda ---------- */
   #mid { -webkit-flex: 1; flex: 1; display: -webkit-flex; display: flex; margin-top: 20px; min-height: 0; }
   #scenes { width: 352px; -webkit-flex: none; flex: none; padding: 18px 20px; display: -webkit-flex; display: flex; -webkit-flex-direction: column; flex-direction: column; }
   #scgrid { -webkit-flex: 1; flex: 1; display: -webkit-flex; display: flex; -webkit-flex-wrap: wrap; flex-wrap: wrap; margin: -7px; }
-  .scn { width: calc(50% - 14px); -webkit-box-sizing: border-box; box-sizing: border-box; margin: 7px; background: var(--bg); border: 1px solid var(--line); border-radius: 18px;
+  .scn { width: calc(50% - 14px); -webkit-box-sizing: border-box; box-sizing: border-box; margin: 7px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
          display: -webkit-flex; display: flex; -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center;
          font-size: 20px; font-weight: 600; color: var(--ink); -webkit-user-select: none; user-select: none; cursor: pointer; text-align: center; padding: 6px; }
-  .scn.act { background: var(--yellow); border-color: var(--yellow); color: #2e2b26; }
+  .scn.act { background: var(--accent); border-color: var(--accent); color: #fff; }
 
   #photos { -webkit-flex: 1; flex: 1; margin: 0 20px; border-radius: 22px; overflow: hidden; position: relative; background: #14120e; }
   .ph { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-position: center; background-repeat: no-repeat; background-size: cover;
@@ -175,7 +182,25 @@ function hhmm(d) { return pad(d.getHours()) + ":" + pad(d.getMinutes()); }
 var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 var MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
 
-function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || "light"; }
+/* heures de lever/coucher du soleil (Levallois) -> thème nuit après le coucher */
+function sunTimes(lat, lon) {
+  var rad = Math.PI / 180, dayMs = 86400000, J1970 = 2440588, J2000 = 2451545;
+  function toDays(dt) { return dt.valueOf() / dayMs - 0.5 + J1970 - J2000; }
+  var d = toDays(new Date()), lw = rad * -lon, n = Math.round(d - 0.0009 - lw / (2 * Math.PI));
+  var ds = 0.0009 + lw / (2 * Math.PI) + n;
+  var M = rad * (357.5291 + 0.98560028 * ds);
+  var L = M + rad * (1.9148 * Math.sin(M) + 0.02 * Math.sin(2 * M) + 0.0003 * Math.sin(3 * M)) + rad * 102.9372 + Math.PI;
+  var dec = Math.asin(Math.sin(rad * 23.4397) * Math.sin(L));
+  var Jtransit = J2000 + ds + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+  var h = rad * -0.833;
+  var w0 = Math.acos((Math.sin(h) - Math.sin(rad * lat) * Math.sin(dec)) / (Math.cos(rad * lat) * Math.cos(dec)));
+  var Jset = J2000 + (0.0009 + (w0 + lw) / (2 * Math.PI) + n) + 0.0053 * Math.sin(M) - 0.0069 * Math.sin(2 * L);
+  var Jrise = Jtransit - (Jset - Jtransit);
+  function fromJ(j) { return new Date((j + 0.5 - J1970) * dayMs); }
+  return { rise: fromJ(Jrise).getTime(), set: fromJ(Jset).getTime() };
+}
+function isNight() { try { var s = sunTimes(48.894, 2.287), n = Date.now(); return n < s.rise || n > s.set; } catch (e) { var h = new Date().getHours(); return h < 8 || h >= 19; } }
+function currentTheme() { var ov = (location.search.match(/theme=(light|dark)/) || [])[1]; return ov || (isNight() ? "dark" : "light"); }
 function applyTheme() { document.documentElement.setAttribute("data-theme", currentTheme()); }
 function C(k) {
   var P = { light: { sun:"#f2b600", cloud:"#b4ac9c", rain:"#5b8fb0", snow:"#9aa0a6", bolt:"#f2b600" },
