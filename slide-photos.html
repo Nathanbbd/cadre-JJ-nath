@@ -84,15 +84,19 @@ function start(list) {
   setInterval(nextPhoto, HOLD_MS);
 }
 
+var tries = 0;
+function retrySoon() { if (!started && tries < 6) setTimeout(load, 20000); }   /* Worker à froid : on réessaie vite au lieu d'attendre 45 min */
 function load() {
-  var xhr = new XMLHttpRequest(); xhr.open("GET", MANIFEST + "?t=" + Date.now()); xhr.timeout = 15000;
+  tries++;
+  var xhr = new XMLHttpRequest(); xhr.open("GET", MANIFEST + "?t=" + Date.now()); xhr.timeout = 60000;
   xhr.onload = function () {
     var list = [];
     if (xhr.status === 200) { try { var j = JSON.parse(xhr.responseText); if (j instanceof Array) list = j; else if (j && j.photos) list = j.photos; } catch (e) {} }
     start(list);
+    if (!list.length) retrySoon();
   };
-  xhr.onerror = function () { start([]); };
-  xhr.ontimeout = function () { start([]); };
+  xhr.onerror = function () { start([]); retrySoon(); };
+  xhr.ontimeout = function () { start([]); retrySoon(); };
   xhr.send();
 }
 
