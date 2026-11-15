@@ -120,8 +120,12 @@ function renderList(id, items, countId) {
 function render() {
   applyTheme();
   var d = DATA || mock();
+  var hasT = !!(d.hasTaches || (d.taches && d.taches.length));
+  var rightCol = document.querySelector(".col.right");
+  if (rightCol) rightCol.style.display = hasT ? "" : "none";
+  el("title").innerHTML = hasT ? "Courses &amp; tâches" : "Courses";
   renderList("courses", d.courses, "cCount");
-  renderList("taches", d.taches, "tCount");
+  if (hasT) renderList("taches", d.taches, "tCount");
   el("src").innerHTML = lastLoad ? "Maj " + hhmm(lastLoad) : "Exemple";
 }
 
