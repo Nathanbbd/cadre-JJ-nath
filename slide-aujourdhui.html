@@ -225,8 +225,10 @@ function scene(name, btn) {
 var MANIFEST = "https://photos-appart.boisbourdinnathande.workers.dev", HOLD_MS = 8000, PLIST = [], pidx = -1, player = 0, photosStarted = false;
 function psrc(n) { return (/^https?:\/\//.test(n)) ? n : ("photos/" + n); }
 var pErr = 0, pTimer = null;
-function pSched(ms) { if (pTimer) clearTimeout(pTimer); pTimer = setTimeout(nextPhoto, ms); }
+var photoFrozen = false;
+function pSched(ms) { if (pTimer) clearTimeout(pTimer); if (!photoFrozen) pTimer = setTimeout(nextPhoto, ms); }
 function nextPhoto() {
+  if (photoFrozen) return;
   if (!PLIST.length) { pSched(5000); return; }
   pidx = (pidx + 1) % PLIST.length;
   var url = psrc(PLIST[pidx]);
@@ -245,6 +247,8 @@ function nextPhoto() {
   };
   img.src = url;
 }
+/* taper la photo = figer / reprendre le défilé */
+(function () { var pz = el("photos"); if (pz) pz.onclick = function () { photoFrozen = !photoFrozen; if (!photoFrozen) nextPhoto(); }; })();
 function startPhotos(list) {
   if (list && list.length) PLIST = list;        /* MAJ de la liste (URLs iCloud rafraîchies) */
   if (!PLIST.length) { el("phelp").style.display = "flex"; return; }
@@ -254,7 +258,12 @@ function startPhotos(list) {
 }
 var ptries = 0;
 function pRetry() { if (!photosStarted && ptries < 6) setTimeout(loadPhotos, 20000); }   /* Worker à froid : réessai rapide */
+/* Mode invité : photos neutres au lieu des photos perso */
+function guestOn() { try { var c = JSON.parse(localStorage.getItem("cadreCfg") || "{}"); return !!(c && c.guest); } catch (e) { return false; } }
+var LANDSCAPES = (function () { var a = []; for (var i = 1; i <= 24; i++) a.push("https://picsum.photos/seed/cadre" + i + "/1280/800"); return a; })();
+function shuffleA(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
 function loadPhotos() {
+  if (guestOn()) { startPhotos(shuffleA(LANDSCAPES.slice())); return; }   /* mode invité */
   ptries++;
   var x = new XMLHttpRequest(); x.open("GET", MANIFEST + (MANIFEST.indexOf("?") < 0 ? "?" : "&") + "size=small&t=" + Date.now()); x.timeout = 60000;
   x.onload = function () { var list = []; if (x.status === 200) { try { var j = JSON.parse(x.responseText); if (j instanceof Array) list = j; else if (j && j.photos) list = j.photos; } catch (e) {} } startPhotos(list); if (!list.length) pRetry(); };

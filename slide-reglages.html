@@ -64,6 +64,11 @@
   <div id="body">
     <div class="col">
       <div class="card">
+        <div class="ttl">Mode invité</div>
+        <div class="row"><div class="lab">Photos neutres<div class="sub">masque vos photos perso (Accueil + Photos)</div></div>
+          <label class="sw"><input type="checkbox" id="gEn"><span class="sl"></span></label></div>
+      </div>
+      <div class="card">
         <div class="ttl">Veille de nuit</div>
         <div class="row"><div class="lab">Activer la veille<div class="sub">écran noir sur la plage horaire</div></div>
           <label class="sw"><input type="checkbox" id="vEn"><span class="sl"></span></label></div>
@@ -114,7 +119,7 @@ function applyTheme(){ document.documentElement.setAttribute("data-theme", curre
 function merge(d,o){ var r={}; for(var k in d) r[k]=d[k]; if(o) for(var k2 in o){ if(o[k2]!=null) r[k2]=o[k2]; } return r; }
 function getCfg(){
   var c={}; try{ c=JSON.parse(localStorage.getItem("cadreCfg")||"{}")||{}; }catch(e){}
-  var cfg={ veille: merge(DEFAULT_VEILLE, c.veille), pages:{} };
+  var cfg={ guest: !!c.guest, veille: merge(DEFAULT_VEILLE, c.veille), pages:{} };
   for(var n in DEFAULT_PAGES){ cfg.pages[n]=merge(DEFAULT_PAGES[n], c.pages && c.pages[n]); }
   return cfg;
 }
@@ -122,7 +127,7 @@ function getCfg(){
 var savedT;
 function flashSaved(){ el("saved").className="on"; clearTimeout(savedT); savedT=setTimeout(function(){ el("saved").className=""; }, 1200); }
 function save(){
-  var cfg = { veille:{ enabled: el("vEn").checked, start: el("vStart").value||"23:00", end: el("vEnd").value||"07:00", wake: Math.max(10, Math.min(900, parseInt(el("vWake").value,10)||120)) }, pages:{} };
+  var cfg = { guest: el("gEn").checked, veille:{ enabled: el("vEn").checked, start: el("vStart").value||"23:00", end: el("vEnd").value||"07:00", wake: Math.max(10, Math.min(900, parseInt(el("vWake").value,10)||120)) }, pages:{} };
   for(var i=0;i<NAMES.length;i++){ var n=NAMES[i];
     cfg.pages[n] = { sec: Math.max(5, Math.min(600, parseInt(el("sec_"+n).value,10)||30)), rot: el("rot_"+n).checked };
   }
@@ -134,6 +139,8 @@ function save(){
 function build(){
   applyTheme();
   var cfg=getCfg();
+  el("gEn").checked=!!cfg.guest;
+  el("gEn").onchange=function(){ save(); try{ window.parent.postMessage("cadre-reload","*"); }catch(e){} };  /* applique tout de suite */
   el("vEn").checked=!!cfg.veille.enabled;
   el("vStart").value=cfg.veille.start; el("vEnd").value=cfg.veille.end; el("vWake").value=cfg.veille.wake;
   el("vEn").onchange=save; el("vStart").onchange=save; el("vEnd").onchange=save; el("vWake").onchange=save;

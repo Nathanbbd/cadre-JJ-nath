@@ -58,6 +58,11 @@ function pad(n) { return n < 10 ? "0" + n : "" + n; }
 
 var LIST = [], idx = -1, layer = 0, started = false;
 
+/* Mode invité : photos neutres au lieu des photos perso */
+function guestOn() { try { var c = JSON.parse(localStorage.getItem("cadreCfg") || "{}"); return !!(c && c.guest); } catch (e) { return false; } }
+var LANDSCAPES = (function () { var a = []; for (var i = 1; i <= 24; i++) a.push("https://picsum.photos/seed/cadre" + i + "/1280/800"); return a; })();
+function shuffleA(a) { for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+
 function srcOf(name) { return (/^https?:\/\//.test(name)) ? name : ("photos/" + name); }
 
 var errStreak = 0, photoTimer = null;
@@ -100,6 +105,7 @@ function start(list) {
 var tries = 0;
 function retrySoon() { if (!started && tries < 6) setTimeout(load, 20000); }   /* Worker à froid : on réessaie vite au lieu d'attendre 45 min */
 function load() {
+  if (guestOn()) { start(shuffleA(LANDSCAPES.slice())); return; }   /* mode invité : images neutres, pas d'album perso */
   tries++;
   var xhr = new XMLHttpRequest(); xhr.open("GET", MANIFEST + "?t=" + Date.now()); xhr.timeout = 60000;
   xhr.onload = function () {
