@@ -197,7 +197,7 @@ function winRow(s) {
 }
 
 /* ---------- affichage ---------- */
-var C = 165, R = 140;
+var C = 165, R = 108;
 function ang(v) { return 135 + (Math.max(14, Math.min(26, v)) - 14) / 12 * 270; }
 function pt(a) { var r = a * Math.PI / 180; return [C + R * Math.cos(r), 150 + R * Math.sin(r)]; }
 function arc(a1, a2) { if (a2 - a1 < 0.5) a2 = a1 + 0.5; var p = pt(a1), q = pt(a2);
