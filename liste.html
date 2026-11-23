@@ -39,8 +39,10 @@
   .row.done .ck { background:var(--accent); border-color:var(--accent); }
   .row.done .ck:after { content:""; position:absolute; left:9px; top:4px; width:6px; height:12px;
     border:solid #fff; border-width:0 2.5px 2.5px 0; transform:rotate(45deg); }
-  .tx { flex:1; font-size:19px; line-height:1.25; word-break:break-word; }
+  .tx { flex:1; font-size:19px; line-height:1.25; word-break:break-word; cursor:text; }
   .row.done .tx { color:var(--done); text-decoration:line-through; }
+  .txedit { flex:1; font:inherit; font-size:19px; color:var(--ink); background:transparent; border:0; border-bottom:2px solid var(--accent);
+    padding:1px 0 3px; outline:none; -webkit-user-select:auto; user-select:auto; }
   .del { flex:none; width:34px; height:34px; border:0; background:transparent; color:var(--faint);
     font-size:22px; cursor:pointer; opacity:.6; }
   .del:active { color:var(--danger); opacity:1; }
@@ -157,12 +159,28 @@ function render(){
   el("clearBtn").className = anyDone ? "" : "hidden";
   var h = "";
   for (var i=0;i<L.length;i++){
+    var id = L[i].id, isEdit = (id === editingId);
     h += '<div class="row'+(L[i].done?' done':'')+'">'
-       + '<div class="ck" onclick="toggle(\''+L[i].id+'\')"></div>'
-       + '<div class="tx">'+esc(L[i].t)+'</div>'
-       + '<button class="del" onclick="del(\''+L[i].id+'\')">&times;</button></div>';
+       + '<div class="ck" onclick="toggle(\''+id+'\')"></div>'
+       + (isEdit
+          ? '<input class="txedit" id="edit_'+id+'" value="'+escAttr(L[i].t)+'" enterkeyhint="done" autocapitalize="sentences" autocomplete="off" onblur="commitEdit(\''+id+'\')" onkeydown="if(event.keyCode===13){this.blur();}">'
+          : '<div class="tx" onclick="startEdit(\''+id+'\')">'+esc(L[i].t)+'</div>')
+       + '<button class="del" onclick="del(\''+id+'\')">&times;</button></div>';
   }
   el("list").innerHTML = h;
+  if (editingId){ var inp = el("edit_"+editingId); if (inp){ inp.focus(); try{ inp.setSelectionRange(inp.value.length, inp.value.length); }catch(e){} } }
+}
+
+/* édition d'un article : taper le texte -> champ modifiable */
+var editingId = null;
+function startEdit(id){ editingId = id; typing = true; render(); }
+function commitEdit(id){
+  var inp = el("edit_"+id); editingId = null; typing = false;
+  if (!inp){ render(); return; }
+  var v = inp.value.trim(), it = null;
+  [DATA.courses, DATA.taches].forEach(function(L){ L.forEach(function(x){ if(x.id===id) it=x; }); });
+  if (it && v && v !== it.t){ it.t = v; busy = true; api("/rename?id="+id+"&t="+encodeURIComponent(v), function(){ busy=false; }); }
+  render();
 }
 function esc(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function escAttr(s){ return esc(s).replace(/"/g,"&quot;"); }
